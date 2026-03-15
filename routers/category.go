@@ -11,4 +11,6 @@ func SetupCategoryRoutes(api fiber.Router) {
 	category := api.Group("/category")
 
 	category.Post("/", middleware.ProtectedRoute,handlers.CreateCategoryHandler)
+	category.Patch("/:id", middleware.ProtectedRoute, handlers.UpdateCategoryHandler)
+	category.Delete("/:id", middleware.ProtectedRoute, handlers.DeleteCategoryHandler)
 }
