@@ -5,6 +5,7 @@ import "time"
 type Categories struct {
 	BaseModel
 	UserID    string
+	Name      string
 	Type      string
 	CreatedAt time.Time
 

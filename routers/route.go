@@ -8,4 +8,6 @@ func SetupRoutes(app *fiber.App) {
 
 	//setup route auth
 	SetupRouteAuth(api)
+	//setup route category
+	SetupCategoryRoutes(api)
 }
