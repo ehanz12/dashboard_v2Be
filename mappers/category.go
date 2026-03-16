@@ -13,3 +13,11 @@ func ToCategoryRes(c *models.Categories) *responses.CategoryResponse {
 		Type:   c.Type,
 	}
 }
+
+func ListToCategoryRes(c []models.Categories) []responses.CategoryResponse {
+	res := make([]responses.CategoryResponse, 0, len(c))
+	for _, category := range c {
+		res = append(res, *ToCategoryRes(&category))
+	}
+	return res
+}

@@ -7,6 +7,15 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func GetCategoriesHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	categories, err := services.GetCategoriesByUserID(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data" : categories})
+}
+
 //create category
 func CreateCategoryHandler(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)

@@ -4,9 +4,18 @@ import (
 	"be_dashboard/database"
 	"be_dashboard/dto/requests"
 	"be_dashboard/dto/responses"
+	"be_dashboard/mappers"
 	"be_dashboard/models"
 	"errors"
 )
+
+func GetCategoriesByUserID(userID string) ([]responses.CategoryResponse, error) {
+	var categories []models.Categories
+	if err := database.DB.Where("user_id = ?", userID).Find(&categories).Error; err != nil {
+		return nil, err
+	}
+	return mappers.ListToCategoryRes(categories), nil
+}
 
 func CreateCategoryService(userID string, req requests.CategoryReq) (responses.CategoryResponse, error) {
 
