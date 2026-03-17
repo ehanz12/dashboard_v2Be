@@ -5,7 +5,7 @@ import "time"
 type Transactions struct {
 	BaseModel
 	UserID          string
-	CategoryID      string
+	CategoryID      *string
 	Amount          float64
 	Type            string
 	Description     string
