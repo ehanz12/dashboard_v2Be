@@ -10,7 +10,6 @@ func ToCategoryRes(c *models.Categories) *responses.CategoryResponse {
 		ID:     c.ID,
 		UserID: c.UserID,
 		Name:   c.Name,
-		Type:   c.Type,
 	}
 }
 

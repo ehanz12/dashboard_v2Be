@@ -3,6 +3,7 @@ package handlers
 import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/services"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,6 +21,36 @@ func CreateTransactionHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message" : "successfuly to create transaction", "data" : transaction})
+}
+
+func GetTransactionsHandler(c *fiber.Ctx) error {
+
+	userID := c.Locals("user_id").(string)
+
+
+	// ambil query param
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+
+	query := requests.TransactionQuery{
+		Page:       page,
+		Limit:      limit,
+		Type:       c.Query("type"),
+		CategoryID: c.Query("category_id"),
+		StartDate:  c.Query("start_date"),
+		EndDate:    c.Query("end_date"),
+		Search:     c.Query("search"),
+	}
+
+	data, err := services.GetTransactions(userID, query)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(data)
 }
 
 func UpdateTransactionHandler(c *fiber.Ctx) error {

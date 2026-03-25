@@ -15,3 +15,14 @@ type UpdateTransactionRequest struct {
 	Description     *string  `json:"description"`
 	TransactionDate *string  `json:"transaction_date"`
 }
+
+//untuk query params
+type TransactionQuery struct {
+	Page       int
+	Limit      int
+	Type       string
+	CategoryID string
+	StartDate  string
+	EndDate    string
+	Search     string
+}

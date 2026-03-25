@@ -34,7 +34,6 @@ func CreateCategoryService(userID string, req requests.CategoryReq) (responses.C
 	category := models.Categories{
 		UserID: userID,
 		Name:   req.Name,
-		Type:   req.Type,
 	}
 
 	if err := tx.Create(&category).Error; err != nil {
@@ -50,7 +49,6 @@ func CreateCategoryService(userID string, req requests.CategoryReq) (responses.C
 		ID:   category.ID,
 		UserID: category.UserID,
 		Name:   category.Name,
-		Type:   category.Type,
 	}, nil
 }
 
@@ -69,7 +67,6 @@ func UpdateCategoryService(id string, req requests.CategoryReq) (responses.Categ
 	}
 
 	category.Name = req.Name
-	category.Type = req.Type
 	if err := tx.Save(&category).Error; err != nil {
 		tx.Rollback()
 		return responses.CategoryResponse{}, errors.New("failed to update category")
@@ -82,7 +79,6 @@ func UpdateCategoryService(id string, req requests.CategoryReq) (responses.Categ
 		ID:   category.ID,
 		UserID: category.UserID,
 		Name:   category.Name,
-		Type:   category.Type,
 	}, nil
 }
 

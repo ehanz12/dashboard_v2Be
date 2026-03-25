@@ -9,6 +9,7 @@ import (
 
 func SetupTransactionRoutes(api fiber.Router) {
 	transaction := api.Group("/transactions")
+	transaction.Get("/", middleware.ProtectedRoute, handlers.GetTransactionsHandler)
 	transaction.Post("/", middleware.ProtectedRoute, handlers.CreateTransactionHandler)
 	transaction.Patch("/:id", middleware.ProtectedRoute, handlers.UpdateTransactionHandler)
 	transaction.Delete("/:id", middleware.ProtectedRoute, handlers.DeleteTransactionHandler)
