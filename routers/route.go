@@ -12,4 +12,6 @@ func SetupRoutes(app *fiber.App) {
 	SetupCategoryRoutes(api)
 	//setup route transaction
 	SetupTransactionRoutes(api)
+	//setup route habit
+	SetupHabitRoutes(api)
 }
