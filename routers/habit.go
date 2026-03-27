@@ -12,4 +12,5 @@ func SetupHabitRoutes(api fiber.Router) {
 
 	habit.Get("/", middleware.ProtectedRoute, handlers.GetHabitsByUserIDHandlers)
 	habit.Post("/", middleware.ProtectedRoute, handlers.CreateHabitHandler)
+	habit.Patch("/:id", middleware.ProtectedRoute, handlers.UpdateHabitHandler)
 }

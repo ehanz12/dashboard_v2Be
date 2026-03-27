@@ -20,7 +20,7 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		return responses.HabitResponse{}, errors.New("User Not Found !")
 	}
 
-	if req.Frequency != "daily" && req.Frequency != "weekly"{
+	if req.Frequency != "daily" && req.Frequency != "weekly" {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("Invalid Frequency !")
 	}
@@ -51,12 +51,11 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 	}, nil
 }
 
-
 func GetHabitsByUserIDService(userID string, query requests.HabitQuery) (map[string]any, error) {
 	var habits []models.Habits
 	var total int64
 	offset := (query.Page - 1) * query.Limit
-	
+
 	db := database.DB.Model(&models.Habits{}).Where("user_id = ?", userID)
 
 	db.Count(&total)
@@ -72,5 +71,55 @@ func GetHabitsByUserIDService(userID string, query requests.HabitQuery) (map[str
 		"page":        query.Page,
 		"limit":       query.Limit,
 		"total_pages": totalPages,
-	},nil
+	}, nil
+}
+
+func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return responses.HabitResponse{}, tx.Error
+	}
+	var user models.Users
+	if err := tx.First(&user, "id = ?", userID).Error; err != nil {
+		tx.Rollback()
+		return responses.HabitResponse{}, errors.New("Not Found User !")
+	}
+
+	var habit models.Habits
+	if err := tx.First(&habit, "id = ? AND user_id = ?", id, userID).Error; err != nil {
+		tx.Rollback()
+		return responses.HabitResponse{}, errors.New("Not Found Habit !")
+	}
+
+	if req.Name != "" {
+		habit.Name = req.Name
+	}
+
+	if req.Frequency != "" {
+		habit.Frequency = req.Frequency
+	}
+
+	if req.Name == "" && req.Frequency == "" {
+		return responses.HabitResponse{}, errors.New("no data to update")
+	}
+
+	var exitsHabit models.Habits
+	if err := tx.Where("user_id = ? AND name = ?", userID, req.Name).First(&exitsHabit).Error; err == nil {
+		tx.Rollback()
+		return responses.HabitResponse{}, errors.New("Habit Already Exists !")
+	}
+
+	if err := tx.Save(&habit).Error; err != nil {
+		tx.Rollback()
+		return responses.HabitResponse{}, errors.New("failed to update")
+	}
+
+	tx.Commit()
+	return responses.HabitResponse{
+		ID:        habit.ID,
+		UserID:    habit.UserID,
+		Name:      habit.Name,
+		Frequency: habit.Frequency,
+		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
+	}, nil
 }

@@ -44,7 +44,24 @@ func GetHabitsByUserIDHandlers(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-
 	return c.Status(fiber.StatusOK).JSON(habits)
+}
 
+
+func UpdateHabitHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+
+	HabitID := c.Params("id")
+
+	var req requests.CreateHabitRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error" : "invalid payload"})
+	}
+
+	update, err := services.UpdateHabitService(userID, HabitID, req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Update SuccessFully", "data" : update})
 }
