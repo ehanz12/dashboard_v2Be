@@ -36,6 +36,7 @@ func GetHabitsByUserIDHandlers(c *fiber.Ctx) error {
 	query := requests.HabitQuery{
 		Page:  page,
 		Limit: limit,
+		Search: c.Query("search"),
 	}
 
 	habits, err := services.GetHabitsByUserIDService(userID, query)
@@ -64,4 +65,16 @@ func UpdateHabitHandler(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Update SuccessFully", "data" : update})
+}
+
+func DeleteHabitHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+
+	habitID := c.Params("id")
+
+	if err := services.DeleteHabitService(userID, habitID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Success to Delete Habit"})
 }

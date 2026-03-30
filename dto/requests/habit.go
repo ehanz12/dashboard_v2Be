@@ -6,6 +6,7 @@ type CreateHabitRequest struct {
 }
 
 type HabitQuery struct {
-	Page  int
-	Limit int
+	Search string
+	Page   int
+	Limit  int
 }

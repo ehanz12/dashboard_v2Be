@@ -58,6 +58,10 @@ func GetHabitsByUserIDService(userID string, query requests.HabitQuery) (map[str
 
 	db := database.DB.Model(&models.Habits{}).Where("user_id = ?", userID)
 
+	if query.Search != "" {
+		db = db.Where("name LIKE ?", "%"+query.Search+"%")
+	}
+
 	db.Count(&total)
 	if err := db.Offset(offset).Limit(query.Limit).Find(&habits).Error; err != nil {
 		return nil, errors.New("Failed to Get Habits !")
@@ -123,3 +127,24 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
+
+
+func DeleteHabitService(userID, id string) error {
+	var habit models.Habits
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	if err := tx.Where("user_id = ? AND id = ?", userID, id).First(&habit).Error; err != nil {
+		tx.Rollback()
+		return errors.New("Not Found Habit !")
+	}
+
+	if err := tx.Delete(&habit).Error; err != nil {
+		tx.Rollback()
+		return errors.New("Failed To Delete !")
+	}
+
+	tx.Commit()
+	return nil
+} 
