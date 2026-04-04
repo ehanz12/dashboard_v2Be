@@ -8,6 +8,7 @@ import (
 	"be_dashboard/models"
 	"errors"
 	"time"
+
 )
 
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
@@ -207,4 +208,34 @@ func TonggleHabitLogService(UserID, HabitID string) (responses.HabitResponseLog,
 		Date:       today,
 		IsComplete: log.Completed,
 	}, nil
+}
+
+
+func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse, error) {
+
+	var result []responses.HabitLogTodayResponse
+
+	today := time.Now().Format("2006-01-02")
+
+	err := database.DB.
+		Table("habits").
+		Select(`
+			habits.id as habit_id,
+			habits.name,
+			COALESCE(habit_logs.completed, false) as completed
+		`).
+		Joins(`
+			LEFT JOIN habit_logs 
+			ON habit_logs.habit_id = habits.id 
+			AND habit_logs.log_date = ?
+		`, today).
+		Where("habits.user_id = ?", userID).
+		Order("habits.created_at DESC").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

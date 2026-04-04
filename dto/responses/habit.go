@@ -26,3 +26,9 @@ type HabitResponseLog struct {
 	Date       string         `json:"date"`
 	IsComplete bool           `json:"is_complete"`
 }
+
+type HabitLogTodayResponse struct {
+	HabitID  string `json:"habit_id"`
+	Name     string `json:"name"`
+	Completed bool  `json:"completed"`
+}

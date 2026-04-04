@@ -16,5 +16,7 @@ func SetupHabitRoutes(api fiber.Router) {
 	habit.Delete("/:id", middleware.ProtectedRoute, handlers.DeleteHabitHandler)
 
 
+	habit.Get("/logs/today", middleware.ProtectedRoute, handlers.GetHabitLogTodayByUserIDHandler)
 	habit.Post("/toggle", middleware.ProtectedRoute, handlers.ToggleHabitLogHandler)
+
 }

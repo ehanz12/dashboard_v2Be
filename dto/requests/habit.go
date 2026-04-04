@@ -14,3 +14,5 @@ type HabitQuery struct {
 type ToogleHabitLogRequest struct {
 	HabitID string `json:"habit_id" binding:"required"`
 }
+
+

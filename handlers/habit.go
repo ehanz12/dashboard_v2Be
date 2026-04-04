@@ -48,6 +48,17 @@ func GetHabitsByUserIDHandlers(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(habits)
 }
 
+func GetHabitLogTodayByUserIDHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	logs, err := services.GetHabitLogsTodayService(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data" : logs, "Message" : "Success to Get Habit Log Today"})
+}
+
 
 func UpdateHabitHandler(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
