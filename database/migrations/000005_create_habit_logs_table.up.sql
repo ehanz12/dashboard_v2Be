@@ -7,5 +7,9 @@ CREATE TABLE habit_logs (
 
     UNIQUE KEY unique_log (habit_id, log_date),
 
+    INDEX idx_habit_logs_habit (habit_id),
+    INDEX idx_habit_logs_date (log_date),
+    INDEX idx_habit_logs_habit_date (habit_id, log_date),
+
     FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
 );

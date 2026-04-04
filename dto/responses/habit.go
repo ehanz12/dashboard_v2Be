@@ -14,3 +14,15 @@ type HabitMini struct {
 	Frequency string `json:"frequency"`
 	CreatedAt string `json:"created_at"`
 }
+
+type HabitSuperMini struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type HabitResponseLog struct {
+	ID         string         `json:"id"`
+	Habit      HabitSuperMini `json:"habit"`
+	Date       string         `json:"date"`
+	IsComplete bool           `json:"is_complete"`
+}

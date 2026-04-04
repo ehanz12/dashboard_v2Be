@@ -14,4 +14,7 @@ func SetupHabitRoutes(api fiber.Router) {
 	habit.Post("/", middleware.ProtectedRoute, handlers.CreateHabitHandler)
 	habit.Patch("/:id", middleware.ProtectedRoute, handlers.UpdateHabitHandler)
 	habit.Delete("/:id", middleware.ProtectedRoute, handlers.DeleteHabitHandler)
+
+
+	habit.Post("/toggle", middleware.ProtectedRoute, handlers.ToggleHabitLogHandler)
 }

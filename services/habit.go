@@ -7,6 +7,7 @@ import (
 	"be_dashboard/mappers"
 	"be_dashboard/models"
 	"errors"
+	"time"
 )
 
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
@@ -148,3 +149,62 @@ func DeleteHabitService(userID, id string) error {
 	tx.Commit()
 	return nil
 } 
+
+
+func TonggleHabitLogService(UserID, HabitID string) (responses.HabitResponseLog, error) {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return responses.HabitResponseLog{}, tx.Error
+	}
+
+	var habit models.Habits
+	if err := tx.Where("id = ? AND user_id = ?", HabitID, UserID).First(&habit).Error; err != nil {
+		tx.Rollback()
+		return responses.HabitResponseLog{}, errors.New("habit not found")
+	}
+
+	today := time.Now().Format("2006-01-02")
+
+
+	var log models.HabitLogs
+	err := tx.Where("habit_id = ? AND log_date = ?", HabitID, today).First(&log).Error
+	if err != nil {
+		newLog := models.HabitLogs{
+			HabitID:   HabitID,
+			LogDate:   time.Now(),
+			Completed: true,
+		}
+
+		if err := tx.Create(&newLog).Error; err != nil {
+			tx.Rollback()
+			return responses.HabitResponseLog{}, errors.New("failed to create log")
+		}
+		tx.Commit()
+		return responses.HabitResponseLog{
+			ID: newLog.ID,
+			Habit: responses.HabitSuperMini{
+				ID:   habit.ID,
+				Name: habit.Name,
+			},
+			Date:       today,
+			IsComplete: true,
+		}, nil
+	}
+
+	log.Completed = !log.Completed
+	if err := tx.Save(&log).Error; err != nil {
+		tx.Rollback()
+		return responses.HabitResponseLog{}, errors.New("failed to update log")
+	}
+
+	tx.Commit()
+	return responses.HabitResponseLog{
+		ID: log.ID,
+		Habit: responses.HabitSuperMini{
+			ID:   habit.ID,
+			Name: habit.Name,
+		},
+		Date:       today,
+		IsComplete: log.Completed,
+	}, nil
+}

@@ -10,3 +10,7 @@ type HabitQuery struct {
 	Page   int
 	Limit  int
 }
+
+type ToogleHabitLogRequest struct {
+	HabitID string `json:"habit_id" binding:"required"`
+}

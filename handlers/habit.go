@@ -78,3 +78,20 @@ func DeleteHabitHandler(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Success to Delete Habit"})
 }
+
+
+func ToggleHabitLogHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+
+	var req requests.ToogleHabitLogRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error" : "invalid payload"})
+	}
+
+	log, err := services.TonggleHabitLogService(userID, req.HabitID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Success to Toggle Habit Log", "data" : log})
+}
