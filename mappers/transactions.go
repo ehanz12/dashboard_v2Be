@@ -6,12 +6,17 @@ import (
 )
 
 func ToTransactionResponse(t models.Transactions) responses.TransactionResponse {
-	return responses.TransactionResponse{
-		ID: t.ID,
-		Category: &responses.CategoryMiniResponse{
+	var categoryRes *responses.CategoryMiniResponse
+	if t.CategoryID != nil && t.Categories.ID != "" {
+		categoryRes = &responses.CategoryMiniResponse{
 			ID:   t.Categories.ID,
 			Name: t.Categories.Name,
-		},
+		}
+	}
+
+	return responses.TransactionResponse{
+		ID:              t.ID,
+		Category:        categoryRes,
 		Amount:          t.Amount,
 		Type:            t.Type,
 		Description:     t.Description,

@@ -53,7 +53,7 @@ func CreateCategoryService(userID string, req requests.CategoryReq) (responses.C
 }
 
 
-func UpdateCategoryService(id string, req requests.CategoryReq) (responses.CategoryResponse, error) {
+func UpdateCategoryService(userID string, id string, req requests.CategoryReq) (responses.CategoryResponse, error) {
 	tx := database.DB.Begin()
 
 	if tx.Error != nil {
@@ -61,7 +61,7 @@ func UpdateCategoryService(id string, req requests.CategoryReq) (responses.Categ
 	}
 
 	var category models.Categories
-	if err := tx.First(&category, "id = ?", id).Error; err != nil {
+	if err := tx.First(&category, "id = ? AND user_id = ?", id, userID).Error; err != nil {
 		tx.Rollback()
 		return responses.CategoryResponse{}, errors.New("category not found")
 	}
@@ -83,13 +83,13 @@ func UpdateCategoryService(id string, req requests.CategoryReq) (responses.Categ
 }
 
 
-func DeleteCategoryService(id string) error {
+func DeleteCategoryService(userID string, id string) error {
 	tx := database.DB.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}
 	var category models.Categories
-	if err := tx.First(&category, "id = ?", id).Error; err != nil {
+	if err := tx.First(&category, "id = ? AND user_id = ?", id, userID).Error; err != nil {
 		tx.Rollback()
 		return errors.New("category not found")
 	}

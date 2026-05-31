@@ -25,8 +25,8 @@ func CreateTransaction(userID string, req requests.CreateTransactionRequest) (re
 		return responses.TransactionResponse{}, errors.New("user not found")
 	}
 
+	var category models.Categories
 	if req.CategoryID != nil {
-		var category models.Categories
 		if err := tx.First(&category, "id = ? AND user_id = ?", *req.CategoryID, userID).Error; err != nil {
 			tx.Rollback()
 			return responses.TransactionResponse{}, errors.New("category not found")
@@ -58,20 +58,21 @@ func CreateTransaction(userID string, req requests.CreateTransactionRequest) (re
 		return responses.TransactionResponse{}, errors.New("failed to create transaction")
 	}
 
-	tx.Preload("Categories", func(db *gorm.DB) *gorm.DB {
-		return db.Select("id", "name")
-	})
-
 	if err := tx.Commit().Error; err != nil {
 		return responses.TransactionResponse{}, errors.New("failed to commit transaction")
 	}
 
+	var categoryRes *responses.CategoryMiniResponse
+	if req.CategoryID != nil {
+		categoryRes = &responses.CategoryMiniResponse{
+			ID:   category.ID,
+			Name: category.Name,
+		}
+	}
+
 	return responses.TransactionResponse{
-		ID: transaction.ID,
-		Category: &responses.CategoryMiniResponse{
-			ID:   transaction.Categories.ID,
-			Name: transaction.Categories.Name,
-		},
+		ID:              transaction.ID,
+		Category:        categoryRes,
 		Amount:          transaction.Amount,
 		Type:            transaction.Type,
 		Description:     transaction.Description,
@@ -192,12 +193,18 @@ func UpdateTransaction(userID, id string, req requests.UpdateTransactionRequest)
 	}
 
 	tx.Commit()
-	return responses.TransactionResponse{
-		ID: transaction.ID,
-		Category: &responses.CategoryMiniResponse{
+
+	var categoryRes *responses.CategoryMiniResponse
+	if transaction.CategoryID != nil && transaction.Categories.ID != "" {
+		categoryRes = &responses.CategoryMiniResponse{
 			ID:   transaction.Categories.ID,
 			Name: transaction.Categories.Name,
-		},
+		}
+	}
+
+	return responses.TransactionResponse{
+		ID:              transaction.ID,
+		Category:        categoryRes,
 		Amount:          transaction.Amount,
 		Type:            transaction.Type,
 		Description:     transaction.Description,

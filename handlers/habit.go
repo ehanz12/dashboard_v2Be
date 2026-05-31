@@ -72,7 +72,7 @@ func UpdateHabitHandler(c *fiber.Ctx) error {
 
 	update, err := services.UpdateHabitService(userID, HabitID, req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err.Error()})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Update SuccessFully", "data" : update})
@@ -84,7 +84,7 @@ func DeleteHabitHandler(c *fiber.Ctx) error {
 	habitID := c.Params("id")
 
 	if err := services.DeleteHabitService(userID, habitID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err.Error()})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Success to Delete Habit"})
@@ -101,7 +101,7 @@ func ToggleHabitLogHandler(c *fiber.Ctx) error {
 
 	log, err := services.TonggleHabitLogService(userID, req.HabitID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error" : err.Error()})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"Message" : "Success to Toggle Habit Log", "data" : log})

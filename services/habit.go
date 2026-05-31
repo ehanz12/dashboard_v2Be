@@ -97,6 +97,8 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		return responses.HabitResponse{}, errors.New("Not Found Habit !")
 	}
 
+	originalName := habit.Name
+
 	if req.Name != "" {
 		habit.Name = req.Name
 	}
@@ -106,13 +108,16 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	}
 
 	if req.Name == "" && req.Frequency == "" {
+		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("no data to update")
 	}
 
-	var exitsHabit models.Habits
-	if err := tx.Where("user_id = ? AND name = ?", userID, req.Name).First(&exitsHabit).Error; err == nil {
-		tx.Rollback()
-		return responses.HabitResponse{}, errors.New("Habit Already Exists !")
+	if req.Name != "" && req.Name != originalName {
+		var exitsHabit models.Habits
+		if err := tx.Where("user_id = ? AND name = ? AND id != ?", userID, req.Name, id).First(&exitsHabit).Error; err == nil {
+			tx.Rollback()
+			return responses.HabitResponse{}, errors.New("Habit Already Exists !")
+		}
 	}
 
 	if err := tx.Save(&habit).Error; err != nil {
