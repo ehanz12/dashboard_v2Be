@@ -1,0 +1,14 @@
+CREATE TABLE timeblocks (
+    id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
+    activity_name VARCHAR(255) NOT NULL,
+    start_time VARCHAR(5) NOT NULL,
+    end_time VARCHAR(5) NOT NULL,
+    color_code VARCHAR(7) NOT NULL DEFAULT '#4F46E5',
+    day_of_week INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

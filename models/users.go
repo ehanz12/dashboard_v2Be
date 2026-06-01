@@ -12,4 +12,7 @@ type Users struct {
 
 	Categories []Categories `gorm:"foreignKey:UserID;references:ID"`
 	Habits     []Habits     `gorm:"foreignKey:UserID;references:ID"`
+	Journals   []Journal    `gorm:"foreignKey:UserID;references:ID"`
+	Tasks      []Task       `gorm:"foreignKey:UserID;references:ID"`
+	Timeblocks []Timeblock  `gorm:"foreignKey:UserID;references:ID"`
 }
