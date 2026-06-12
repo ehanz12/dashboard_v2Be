@@ -7,6 +7,8 @@ type Users struct {
 	Name      string
 	Email     string
 	Password  string
+	NomorHP   string
+	Bio       *string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

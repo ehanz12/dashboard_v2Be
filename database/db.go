@@ -3,6 +3,7 @@ package database
 import (
 	"be_dashboard/config"
 	"fmt"
+	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -24,8 +25,22 @@ func Connect() {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("Failed to connect to database!")
+		panic("Failed to connect to database: " + err.Error())
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic("Failed to get underlying SQL DB: " + err.Error())
+	}
+
+	// SetMaxIdleConns: jumlah maksimal koneksi yang dibiarkan idle di pool
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns: jumlah maksimal koneksi yang terbuka ke database
+	sqlDB.SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime: durasi maksimal sebuah koneksi dapat digunakan kembali
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	DB = db
 

@@ -18,4 +18,10 @@ func SetupRouteAuth(api fiber.Router) {
 
 	//me
 	auth.Get("/me", middleware.ProtectedRoute,handlers.MeAuthHandler)
+
+	//edit
+	auth.Put("/edit", middleware.ProtectedRoute, handlers.EditMeAuthHandler)
+
+	//change password
+	auth.Patch("/change-password", middleware.ProtectedRoute, handlers.ChangePasswordAuthHandler)
 }

@@ -5,6 +5,7 @@ import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/mappers"
 	"be_dashboard/models"
+	"be_dashboard/services"
 	"be_dashboard/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,9 +22,9 @@ func CreateAuthHandler(c *fiber.Ctx) error {
 	}
 
 	// validasi
-	if req.Email == "" || req.Password == "" || req.Name == "" {
+	if req.Email == "" || req.Password == "" || req.Name == "" || req.NomorHP == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "all fields are required",
+			"error": "all fields are required, except bio",
 		})
 	}
 
@@ -48,6 +49,8 @@ func CreateAuthHandler(c *fiber.Ctx) error {
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: string(passwordHash),
+		NomorHP:  req.NomorHP,
+		Bio:      &req.Bio,
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -97,7 +100,7 @@ func LoginAuthHandler(c *fiber.Ctx) error {
 			"error": "failed to generate token",
 		})
 	}
-	return c.JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"Message": "Successfully logged in",
 		"token":   token,
 	})
@@ -112,8 +115,53 @@ func MeAuthHandler(c *fiber.Ctx) error {
 			"error": "failed to fetch user",
 		})
 	}
-	return c.JSON(fiber.Map{
-		"Message" : "User data fetched successfully",
-		"data" : mappers.ToUserResponse(user),
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"Message": "User data fetched successfully",
+		"data":    mappers.ToUserResponse(user),
 	})
+}
+
+func EditMeAuthHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	var req requests.EditRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
+	}
+	if req.Email == "" || req.Name == "" || req.NomorHP == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email, name, and nomor_hp are required, bio is optional",
+		})
+	}
+	if err := services.EditAuthService(userID, req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"Message": "User data updated successfully",
+	})
+}
+
+
+func ChangePasswordAuthHandler(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(string)
+	var req requests.ChangePasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
+	}
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "current password and new password are required",
+		})
+	}
+	if err := services.ChangePasswordAuthService(userID, req); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message" :  "successfully to change password !"})
 }
