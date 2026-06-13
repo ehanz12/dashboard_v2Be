@@ -6,10 +6,15 @@ import (
 )
 
 func ToResponseHabitMini(h models.Habits) responses.HabitMini {
+	var dateStr string
+	if h.Date != nil {
+		dateStr = h.Date.Format("2006-01-02")
+	}
 	return responses.HabitMini{
-		ID:   h.ID,
-		Name: h.Name,
+		ID:        h.ID,
+		Name:      h.Name,
 		Frequency: h.Frequency,
+		Date:      dateStr,
 		CreatedAt: h.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
@@ -22,15 +27,14 @@ func ToListResponseHabitMini(habits []models.Habits) []responses.HabitMini {
 	return res
 }
 
-
 func ToResponseHabitLog(h models.HabitLogs) responses.HabitResponseLog {
 	return responses.HabitResponseLog{
 		ID: h.ID,
 		Habit: responses.HabitSuperMini{
-			ID: h.Habits.ID,
+			ID:   h.Habits.ID,
 			Name: h.Habits.Name,
 		},
-		Date: h.LogDate.Format("2006-01-02"),
+		Date:       h.LogDate.Format("2006-01-02"),
 		IsComplete: h.Completed,
 	}
 }

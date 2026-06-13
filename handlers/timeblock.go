@@ -4,6 +4,7 @@ import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/services"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,6 +12,7 @@ import (
 func GetTimeblocksHandler(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 	dayOfWeekStr := c.Query("day_of_week")
+	dateStr := c.Query("date")
 
 	var dayOfWeek *int
 	if dayOfWeekStr != "" {
@@ -20,7 +22,16 @@ func GetTimeblocksHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	timeblocks, err := services.GetTimeblocksByUserID(userID, dayOfWeek)
+	var date *time.Time
+	if dateStr != "" {
+		d, err := time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid date format, use YYYY-MM-DD"})
+		}
+		date = &d
+	}
+
+	timeblocks, err := services.GetTimeblocksByUserID(userID, dayOfWeek, date)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

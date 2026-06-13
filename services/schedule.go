@@ -23,7 +23,7 @@ func GetScheduleForDateService(userID, date string) (responses.ScheduleTodayResp
 		dayOfWeek = 7
 	}
 
-	timeblocks, err := GetTimeblocksByUserID(userID, &dayOfWeek)
+	timeblocks, err := GetTimeblocksByUserID(userID, &dayOfWeek, &parsedDate)
 	if err != nil {
 		return responses.ScheduleTodayResponse{}, err
 	}

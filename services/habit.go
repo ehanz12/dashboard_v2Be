@@ -38,16 +38,32 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		Frequency: req.Frequency,
 	}
 
+	if req.Date != nil {
+		if *req.Date != "" {
+			parsedDate, err := time.Parse("2006-01-02", *req.Date)
+			if err != nil {
+				tx.Rollback()
+				return responses.HabitResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
+			}
+			habit.Date = &parsedDate
+		}
+	}
+
 	if err := tx.Create(&habit).Error; err != nil {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("Failed to Create Habit !")
 	}
 	tx.Commit()
+	var habitDate string
+	if habit.Date != nil {
+		habitDate = habit.Date.Format("2006-01-02")
+	}
 	return responses.HabitResponse{
 		ID:        habit.ID,
 		UserID:    habit.UserID,
 		Name:      habit.Name,
 		Frequency: habit.Frequency,
+		Date:      habitDate,
 		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
@@ -106,7 +122,20 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		habit.Frequency = req.Frequency
 	}
 
-	if req.Name == "" && req.Frequency == "" {
+	if req.Date != nil {
+		if *req.Date == "" {
+			habit.Date = nil
+		} else {
+			parsedDate, err := time.Parse("2006-01-02", *req.Date)
+			if err != nil {
+				tx.Rollback()
+				return responses.HabitResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
+			}
+			habit.Date = &parsedDate
+		}
+	}
+
+	if req.Name == "" && req.Frequency == "" && req.Date == nil {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("no data to update")
 	}
@@ -125,11 +154,16 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	}
 
 	tx.Commit()
+	var habitDate string
+	if habit.Date != nil {
+		habitDate = habit.Date.Format("2006-01-02")
+	}
 	return responses.HabitResponse{
 		ID:        habit.ID,
 		UserID:    habit.UserID,
 		Name:      habit.Name,
 		Frequency: habit.Frequency,
+		Date:      habitDate,
 		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }

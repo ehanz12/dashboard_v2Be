@@ -8,6 +8,7 @@ type TimeblockResponse struct {
 	EndTime      string `json:"end_time"`
 	ColorCode    string `json:"color_code"`
 	DayOfWeek    int    `json:"day_of_week"`
+	Date         string `json:"date,omitempty"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
 }

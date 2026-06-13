@@ -8,6 +8,7 @@ import (
 	"be_dashboard/models"
 	"errors"
 	"regexp"
+	"time"
 )
 
 func isValidTime(t string) bool {
@@ -15,11 +16,13 @@ func isValidTime(t string) bool {
 	return match
 }
 
-func GetTimeblocksByUserID(userID string, dayOfWeek *int) ([]responses.TimeblockResponse, error) {
+func GetTimeblocksByUserID(userID string, dayOfWeek *int, date *time.Time) ([]responses.TimeblockResponse, error) {
 	var timeblocks []models.Timeblock
 	query := database.DB.Where("user_id = ?", userID)
 
-	if dayOfWeek != nil {
+	if date != nil {
+		query = query.Where("date = ? OR day_of_week = ?", date.Format("2006-01-02"), int(date.Weekday()))
+	} else if dayOfWeek != nil {
 		query = query.Where("day_of_week = ?", *dayOfWeek)
 	}
 
@@ -48,6 +51,22 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 		}
 	}
 
+	var parsedDate *time.Time
+	if req.Date != nil && *req.Date != "" {
+		d, err := time.Parse("2006-01-02", *req.Date)
+		if err != nil {
+			return responses.TimeblockResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
+		}
+		parsedDate = &d
+		weekday := int(d.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		if weekday != req.DayOfWeek {
+			return responses.TimeblockResponse{}, errors.New("day_of_week must match the provided date")
+		}
+	}
+
 	tx := database.DB.Begin()
 	if tx.Error != nil {
 		return responses.TimeblockResponse{}, tx.Error
@@ -66,6 +85,7 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 		EndTime:      req.EndTime,
 		ColorCode:    colorCode,
 		DayOfWeek:    req.DayOfWeek,
+		Date:         parsedDate,
 	}
 
 	if err := tx.Create(&timeblock).Error; err != nil {
@@ -99,6 +119,26 @@ func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblo
 		}
 	}
 
+	var parsedDate *time.Time
+	if req.Date != nil {
+		if *req.Date == "" {
+			parsedDate = nil
+		} else {
+			d, err := time.Parse("2006-01-02", *req.Date)
+			if err != nil {
+				return responses.TimeblockResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
+			}
+			parsedDate = &d
+			weekday := int(d.Weekday())
+			if weekday == 0 {
+				weekday = 7
+			}
+			if weekday != req.DayOfWeek {
+				return responses.TimeblockResponse{}, errors.New("day_of_week must match the provided date")
+			}
+		}
+	}
+
 	tx := database.DB.Begin()
 	if tx.Error != nil {
 		return responses.TimeblockResponse{}, tx.Error
@@ -115,6 +155,9 @@ func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblo
 	timeblock.EndTime = req.EndTime
 	timeblock.ColorCode = colorCode
 	timeblock.DayOfWeek = req.DayOfWeek
+	if req.Date != nil {
+		timeblock.Date = parsedDate
+	}
 
 	if err := tx.Save(&timeblock).Error; err != nil {
 		tx.Rollback()

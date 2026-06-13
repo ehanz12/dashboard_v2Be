@@ -1,0 +1,5 @@
+ALTER TABLE habits
+DROP COLUMN date;
+
+ALTER TABLE timeblocks
+DROP COLUMN date;
