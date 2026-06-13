@@ -21,7 +21,11 @@ func GetTimeblocksByUserID(userID string, dayOfWeek *int, date *time.Time) ([]re
 	query := database.DB.Where("user_id = ?", userID)
 
 	if date != nil {
-		query = query.Where("date = ? OR day_of_week = ?", date.Format("2006-01-02"), int(date.Weekday()))
+		weekday := int(date.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		query = query.Where("date = ? OR day_of_week = ?", date.Format("2006-01-02"), weekday)
 	} else if dayOfWeek != nil {
 		query = query.Where("day_of_week = ?", *dayOfWeek)
 	}
@@ -33,12 +37,18 @@ func GetTimeblocksByUserID(userID string, dayOfWeek *int, date *time.Time) ([]re
 }
 
 func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) (responses.TimeblockResponse, error) {
-	if req.DayOfWeek < 1 || req.DayOfWeek > 7 {
-		return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 (Monday) and 7 (Sunday)")
-	}
-
 	if !isValidTime(req.StartTime) || !isValidTime(req.EndTime) {
 		return responses.TimeblockResponse{}, errors.New("start_time and end_time must be in HH:MM format (24-hour)")
+	}
+
+	if req.Date == nil && (req.DayOfWeek == nil || *req.DayOfWeek < 1 || *req.DayOfWeek > 7) {
+		return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 (Monday) and 7 (Sunday) when date is not provided")
+	}
+
+	if req.Date != nil && *req.Date != "" {
+		if req.DayOfWeek != nil && (*req.DayOfWeek < 1 || *req.DayOfWeek > 7) {
+			return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 and 7")
+		}
 	}
 
 	colorCode := req.ColorCode
@@ -52,6 +62,7 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 	}
 
 	var parsedDate *time.Time
+	var dayOfWeekVal int
 	if req.Date != nil && *req.Date != "" {
 		d, err := time.Parse("2006-01-02", *req.Date)
 		if err != nil {
@@ -62,9 +73,14 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 		if weekday == 0 {
 			weekday = 7
 		}
-		if weekday != req.DayOfWeek {
-			return responses.TimeblockResponse{}, errors.New("day_of_week must match the provided date")
+		if req.DayOfWeek != nil {
+			if weekday != *req.DayOfWeek {
+				return responses.TimeblockResponse{}, errors.New("day_of_week must match the provided date")
+			}
 		}
+		dayOfWeekVal = weekday
+	} else {
+		dayOfWeekVal = *req.DayOfWeek
 	}
 
 	tx := database.DB.Begin()
@@ -84,7 +100,7 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 		StartTime:    req.StartTime,
 		EndTime:      req.EndTime,
 		ColorCode:    colorCode,
-		DayOfWeek:    req.DayOfWeek,
+		DayOfWeek:    dayOfWeekVal,
 		Date:         parsedDate,
 	}
 
@@ -101,12 +117,18 @@ func CreateTimeblockService(userID string, req requests.CreateTimeblockRequest) 
 }
 
 func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblockRequest) (responses.TimeblockResponse, error) {
-	if req.DayOfWeek < 1 || req.DayOfWeek > 7 {
-		return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 and 7")
-	}
-
 	if !isValidTime(req.StartTime) || !isValidTime(req.EndTime) {
 		return responses.TimeblockResponse{}, errors.New("start_time and end_time must be in HH:MM format")
+	}
+
+	if req.Date == nil {
+		if req.DayOfWeek == nil || *req.DayOfWeek < 1 || *req.DayOfWeek > 7 {
+			return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 and 7 when date is not provided")
+		}
+	} else if *req.Date != "" {
+		if req.DayOfWeek != nil && (*req.DayOfWeek < 1 || *req.DayOfWeek > 7) {
+			return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 and 7")
+		}
 	}
 
 	colorCode := req.ColorCode
@@ -120,9 +142,14 @@ func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblo
 	}
 
 	var parsedDate *time.Time
+	var dayOfWeekVal int
 	if req.Date != nil {
 		if *req.Date == "" {
 			parsedDate = nil
+			if req.DayOfWeek == nil || *req.DayOfWeek < 1 || *req.DayOfWeek > 7 {
+				return responses.TimeblockResponse{}, errors.New("day_of_week must be between 1 and 7 when date is cleared")
+			}
+			dayOfWeekVal = *req.DayOfWeek
 		} else {
 			d, err := time.Parse("2006-01-02", *req.Date)
 			if err != nil {
@@ -133,10 +160,13 @@ func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblo
 			if weekday == 0 {
 				weekday = 7
 			}
-			if weekday != req.DayOfWeek {
+			if req.DayOfWeek != nil && weekday != *req.DayOfWeek {
 				return responses.TimeblockResponse{}, errors.New("day_of_week must match the provided date")
 			}
+			dayOfWeekVal = weekday
 		}
+	} else {
+		dayOfWeekVal = *req.DayOfWeek
 	}
 
 	tx := database.DB.Begin()
@@ -154,7 +184,7 @@ func UpdateTimeblockService(userID string, id string, req requests.CreateTimeblo
 	timeblock.StartTime = req.StartTime
 	timeblock.EndTime = req.EndTime
 	timeblock.ColorCode = colorCode
-	timeblock.DayOfWeek = req.DayOfWeek
+	timeblock.DayOfWeek = dayOfWeekVal
 	if req.Date != nil {
 		timeblock.Date = parsedDate
 	}

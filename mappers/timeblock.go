@@ -6,6 +6,11 @@ import (
 )
 
 func ToTimeblockResponse(t models.Timeblock) responses.TimeblockResponse {
+	var date string
+	if t.Date != nil {
+		date = t.Date.Format("2006-01-02")
+	}
+
 	return responses.TimeblockResponse{
 		ID:           t.ID,
 		UserID:       t.UserID,
@@ -14,6 +19,7 @@ func ToTimeblockResponse(t models.Timeblock) responses.TimeblockResponse {
 		EndTime:      t.EndTime,
 		ColorCode:    t.ColorCode,
 		DayOfWeek:    t.DayOfWeek,
+		Date:         date,
 		CreatedAt:    t.CreatedAt.Format("2006-01-02 15:04:05"),
 		UpdatedAt:    t.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
