@@ -8,7 +8,6 @@ import (
 	"be_dashboard/models"
 	"errors"
 	"time"
-
 )
 
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
@@ -135,7 +134,6 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	}, nil
 }
 
-
 func DeleteHabitService(userID, id string) error {
 	var habit models.Habits
 	tx := database.DB.Begin()
@@ -154,8 +152,7 @@ func DeleteHabitService(userID, id string) error {
 
 	tx.Commit()
 	return nil
-} 
-
+}
 
 func TonggleHabitLogService(UserID, HabitID string) (responses.HabitResponseLog, error) {
 	tx := database.DB.Begin()
@@ -170,7 +167,6 @@ func TonggleHabitLogService(UserID, HabitID string) (responses.HabitResponseLog,
 	}
 
 	today := time.Now().Format("2006-01-02")
-
 
 	var log models.HabitLogs
 	err := tx.Where("habit_id = ? AND log_date = ?", HabitID, today).First(&log).Error
@@ -215,7 +211,6 @@ func TonggleHabitLogService(UserID, HabitID string) (responses.HabitResponseLog,
 	}, nil
 }
 
-
 func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse, error) {
 
 	var result []responses.HabitLogTodayResponse
@@ -234,6 +229,32 @@ func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse,
 			ON habit_logs.habit_id = habits.id 
 			AND habit_logs.log_date = ?
 		`, today).
+		Where("habits.user_id = ?", userID).
+		Order("habits.created_at DESC").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func GetHabitLogsByDateService(userID, date string) ([]responses.HabitLogTodayResponse, error) {
+	var result []responses.HabitLogTodayResponse
+
+	err := database.DB.
+		Table("habits").
+		Select(`
+			habits.id as habit_id,
+			habits.name,
+			COALESCE(habit_logs.completed, false) as completed
+		`).
+		Joins(`
+			LEFT JOIN habit_logs 
+			ON habit_logs.habit_id = habits.id 
+			AND habit_logs.log_date = ?
+		`, date).
 		Where("habits.user_id = ?", userID).
 		Order("habits.created_at DESC").
 		Scan(&result).Error

@@ -41,4 +41,6 @@ func SetupRoutes(app *fiber.App) {
 	SetupTaskRoutes(api)
 	//setup route timeblock
 	SetupTimeblockRoutes(api)
+	//setup route schedule
+	SetupScheduleRoutes(api)
 }
