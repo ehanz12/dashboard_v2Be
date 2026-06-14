@@ -30,4 +30,5 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
+	gorm.io/datatypes v1.2.7 // indirect
 )

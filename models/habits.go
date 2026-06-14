@@ -1,13 +1,17 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
 
 type Habits struct {
 	BaseModel
 	UserID    string
 	Name      string
 	Frequency string
-	Date      *time.Time `gorm:"type:date;default:null"`
+	Days      datatypes.JSON `gorm:"type:json;default:null"`
 	CreatedAt time.Time
 
 	Users Users `gorm:"foreignKey:UserID;references:ID"`

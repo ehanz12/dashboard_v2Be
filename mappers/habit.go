@@ -3,18 +3,19 @@ package mappers
 import (
 	"be_dashboard/dto/responses"
 	"be_dashboard/models"
+	"encoding/json"
 )
 
 func ToResponseHabitMini(h models.Habits) responses.HabitMini {
-	var dateStr string
-	if h.Date != nil {
-		dateStr = h.Date.Format("2006-01-02")
+	var days []string
+	if len(h.Days) > 0 {
+		_ = json.Unmarshal(h.Days, &days)
 	}
 	return responses.HabitMini{
 		ID:        h.ID,
 		Name:      h.Name,
 		Frequency: h.Frequency,
-		Date:      dateStr,
+		Days:      days,
 		CreatedAt: h.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

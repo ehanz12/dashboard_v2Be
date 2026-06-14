@@ -6,8 +6,12 @@ import (
 	"be_dashboard/dto/responses"
 	"be_dashboard/mappers"
 	"be_dashboard/models"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
+
+	"gorm.io/datatypes"
 )
 
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
@@ -38,15 +42,14 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		Frequency: req.Frequency,
 	}
 
-	if req.Date != nil {
-		if *req.Date != "" {
-			parsedDate, err := time.Parse("2006-01-02", *req.Date)
-			if err != nil {
-				tx.Rollback()
-				return responses.HabitResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
-			}
-			habit.Date = &parsedDate
+	// handle weekly days
+	if req.Frequency == "weekly" {
+		if len(req.Days) == 0 {
+			tx.Rollback()
+			return responses.HabitResponse{}, errors.New("days is required for weekly frequency")
 		}
+		b, _ := json.Marshal(req.Days)
+		habit.Days = datatypes.JSON(b)
 	}
 
 	if err := tx.Create(&habit).Error; err != nil {
@@ -54,16 +57,16 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		return responses.HabitResponse{}, errors.New("Failed to Create Habit !")
 	}
 	tx.Commit()
-	var habitDate string
-	if habit.Date != nil {
-		habitDate = habit.Date.Format("2006-01-02")
+	var days []string
+	if len(habit.Days) > 0 {
+		_ = json.Unmarshal(habit.Days, &days)
 	}
 	return responses.HabitResponse{
 		ID:        habit.ID,
 		UserID:    habit.UserID,
 		Name:      habit.Name,
 		Frequency: habit.Frequency,
-		Date:      habitDate,
+		Days:      days,
 		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
@@ -122,20 +125,17 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		habit.Frequency = req.Frequency
 	}
 
-	if req.Date != nil {
-		if *req.Date == "" {
-			habit.Date = nil
+	if req.Days != nil {
+		// client sent days array; empty slice will clear days
+		b, _ := json.Marshal(req.Days)
+		if len(req.Days) == 0 {
+			habit.Days = nil
 		} else {
-			parsedDate, err := time.Parse("2006-01-02", *req.Date)
-			if err != nil {
-				tx.Rollback()
-				return responses.HabitResponse{}, errors.New("invalid date format, expected YYYY-MM-DD")
-			}
-			habit.Date = &parsedDate
+			habit.Days = datatypes.JSON(b)
 		}
 	}
 
-	if req.Name == "" && req.Frequency == "" && req.Date == nil {
+	if req.Name == "" && req.Frequency == "" && req.Days == nil {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("no data to update")
 	}
@@ -154,16 +154,16 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	}
 
 	tx.Commit()
-	var habitDate string
-	if habit.Date != nil {
-		habitDate = habit.Date.Format("2006-01-02")
+	var days []string
+	if len(habit.Days) > 0 {
+		_ = json.Unmarshal(habit.Days, &days)
 	}
 	return responses.HabitResponse{
 		ID:        habit.ID,
 		UserID:    habit.UserID,
 		Name:      habit.Name,
 		Frequency: habit.Frequency,
-		Date:      habitDate,
+		Days:      days,
 		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
@@ -250,6 +250,9 @@ func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse,
 	var result []responses.HabitLogTodayResponse
 
 	today := time.Now().Format("2006-01-02")
+	weekday := time.Now().Weekday().String()
+	// JSON_CONTAINS expects a JSON value; supply quoted string like "Monday"
+	jsonVal := fmt.Sprintf("\"%s\"", weekday)
 
 	err := database.DB.
 		Table("habits").
@@ -263,7 +266,7 @@ func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse,
 			ON habit_logs.habit_id = habits.id 
 			AND habit_logs.log_date = ?
 		`, today).
-		Where("habits.user_id = ?", userID).
+		Where("habits.user_id = ? AND (habits.frequency = 'daily' OR JSON_CONTAINS(habits.days, ?))", userID, jsonVal).
 		Order("habits.created_at DESC").
 		Scan(&result).Error
 
@@ -277,6 +280,14 @@ func GetHabitLogsTodayService(userID string) ([]responses.HabitLogTodayResponse,
 func GetHabitLogsByDateService(userID, date string) ([]responses.HabitLogTodayResponse, error) {
 	var result []responses.HabitLogTodayResponse
 
+	// parse date to get weekday
+	parsed, errp := time.Parse("2006-01-02", date)
+	if errp != nil {
+		return nil, errp
+	}
+	weekday := parsed.Weekday().String()
+	jsonVal := fmt.Sprintf("\"%s\"", weekday)
+
 	err := database.DB.
 		Table("habits").
 		Select(`
@@ -289,7 +300,7 @@ func GetHabitLogsByDateService(userID, date string) ([]responses.HabitLogTodayRe
 			ON habit_logs.habit_id = habits.id 
 			AND habit_logs.log_date = ?
 		`, date).
-		Where("habits.user_id = ?", userID).
+		Where("habits.user_id = ? AND (habits.frequency = 'daily' OR JSON_CONTAINS(habits.days, ?))", userID, jsonVal).
 		Order("habits.created_at DESC").
 		Scan(&result).Error
 
