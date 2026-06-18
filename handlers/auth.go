@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"os"
+	"time"
 
 	"be_dashboard/database"
 	"be_dashboard/dto/requests"
@@ -49,12 +50,19 @@ func CreateAuthHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	// generate verification code
+	verificationCode := utils.GenerateVerificationCode()
+	expireAt := time.Now().Add(24 * time.Hour)
+
 	user := models.Users{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: string(passwordHash),
-		NomorHP:  req.NomorHP,
-		Bio:      &req.Bio,
+		Name:                 req.Name,
+		Email:                req.Email,
+		Password:             string(passwordHash),
+		NomorHP:              req.NomorHP,
+		Bio:                  &req.Bio,
+		EmailVerified:        false,
+		VerificationCode:     verificationCode,
+		VerificationExpireAt: &expireAt,
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -63,8 +71,19 @@ func CreateAuthHandler(c *fiber.Ctx) error {
 		})
 	}
 
+	// send verification email
+	if err := services.SendVerificationEmail(user.Email, verificationCode); err != nil {
+		// log error but don't fail the registration
+		// in production, you might want to retry or handle this differently
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+			"message": "register success but failed to send verification email. Please try again later.",
+			"email":   user.Email,
+		})
+	}
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "register success",
+		"message": "register success! Please check your email for verification code.",
+		"email":   user.Email,
 	})
 }
 
@@ -90,6 +109,14 @@ func LoginAuthHandler(c *fiber.Ctx) error {
 			"error": "invalid email or password",
 		})
 	}
+
+	// check if email is verified
+	if !user.EmailVerified {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "email not verified. Please check your email for verification code.",
+		})
+	}
+
 	// cek password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
@@ -224,5 +251,31 @@ func GoogleAuthHandler(c *fiber.Ctx) error {
 		"message": "success",
 		"token":   token,
 		"data":    mappers.ToUserResponse(user),
+	})
+}
+
+// VerifyEmailHandler verifies the user's email with the provided verification code
+func VerifyEmailHandler(c *fiber.Ctx) error {
+	var req requests.VerifyEmailRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
+	}
+
+	if req.Email == "" || req.VerificationCode == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email and verification_code are required",
+		})
+	}
+
+	if err := services.VerifyEmailService(req.Email, req.VerificationCode); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "email verified successfully",
 	})
 }

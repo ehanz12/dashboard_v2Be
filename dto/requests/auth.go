@@ -31,3 +31,9 @@ type ChangePasswordRequest struct {
 type GoogleAuthRequest struct {
 	IDToken string `json:"id_token" validate:"required"`
 }
+
+// payload for email verification
+type VerifyEmailRequest struct {
+	Email            string `json:"email" validate:"required,email"`
+	VerificationCode string `json:"verification_code" validate:"required"`
+}

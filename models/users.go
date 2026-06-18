@@ -4,13 +4,16 @@ import "time"
 
 type Users struct {
 	BaseModel
-	Name      string
-	Email     string
-	Password  string
-	NomorHP   string
-	Bio       *string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name                 string
+	Email                string
+	Password             string
+	NomorHP              string
+	Bio                  *string
+	EmailVerified        bool
+	VerificationCode     string
+	VerificationExpireAt *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 
 	Categories []Categories `gorm:"foreignKey:UserID;references:ID"`
 	Habits     []Habits     `gorm:"foreignKey:UserID;references:ID"`

@@ -5,6 +5,8 @@ import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/models"
 	"errors"
+	"time"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -65,6 +67,45 @@ func ChangePasswordAuthService(userID string, r requests.ChangePasswordRequest) 
 		tx.Rollback()
 		return errors.New("failed to update password")
 	}
+	tx.Commit()
+	return nil
+}
+
+// VerifyEmailService verifies the email with the provided code
+func VerifyEmailService(email, verificationCode string) error {
+	tx := database.DB.Begin()
+	if tx.Error != nil {
+		return errors.New("internal server error")
+	}
+
+	var user models.Users
+	if err := tx.Where("email = ?", email).First(&user).Error; err != nil {
+		tx.Rollback()
+		return errors.New("user not found")
+	}
+
+	// Check if verification code matches
+	if user.VerificationCode != verificationCode {
+		tx.Rollback()
+		return errors.New("invalid verification code")
+	}
+
+	// Check if code is expired
+	if user.VerificationExpireAt != nil && time.Now().After(*user.VerificationExpireAt) {
+		tx.Rollback()
+		return errors.New("verification code has expired")
+	}
+
+	// Mark email as verified
+	user.EmailVerified = true
+	user.VerificationCode = ""
+	user.VerificationExpireAt = nil
+
+	if err := tx.Save(&user).Error; err != nil {
+		tx.Rollback()
+		return errors.New("failed to verify email")
+	}
+
 	tx.Commit()
 	return nil
 }
