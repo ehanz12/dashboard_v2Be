@@ -16,8 +16,11 @@ func SetupRouteAuth(api fiber.Router) {
 	//login
 	auth.Post("/login", handlers.LoginAuthHandler)
 
+	// google oauth (id token)
+	auth.Post("/google", handlers.GoogleAuthHandler)
+
 	//me
-	auth.Get("/me", middleware.ProtectedRoute,handlers.MeAuthHandler)
+	auth.Get("/me", middleware.ProtectedRoute, handlers.MeAuthHandler)
 
 	//edit
 	auth.Put("/edit", middleware.ProtectedRoute, handlers.EditMeAuthHandler)

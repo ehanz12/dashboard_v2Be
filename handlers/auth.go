@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"context"
+	"os"
+
 	"be_dashboard/database"
 	"be_dashboard/dto/requests"
 	"be_dashboard/mappers"
@@ -10,6 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/api/idtoken"
 )
 
 func CreateAuthHandler(c *fiber.Ctx) error {
@@ -144,7 +148,6 @@ func EditMeAuthHandler(c *fiber.Ctx) error {
 	})
 }
 
-
 func ChangePasswordAuthHandler(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 	var req requests.ChangePasswordRequest
@@ -163,5 +166,63 @@ func ChangePasswordAuthHandler(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message" :  "successfully to change password !"})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "successfully to change password !"})
+}
+
+// GoogleAuthHandler accepts a Google ID token (from client) and verifies it,
+// then finds or creates the user and returns a JWT.
+func GoogleAuthHandler(c *fiber.Ctx) error {
+	var req requests.GoogleAuthRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+	}
+	if req.IDToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id_token is required"})
+	}
+
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	if clientID == "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "GOOGLE_CLIENT_ID not configured"})
+	}
+
+	// verify id token
+	payload, err := idtoken.Validate(context.Background(), req.IDToken, clientID)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid google id token"})
+	}
+
+	// extract email and name from payload
+	emailI, _ := payload.Claims["email"]
+	nameI, _ := payload.Claims["name"]
+	email, _ := emailI.(string)
+	name, _ := nameI.(string)
+	if email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email not found in token"})
+	}
+
+	// find or create user
+	var user models.Users
+	err = database.DB.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		// create new user
+		user = models.Users{
+			Name:  name,
+			Email: email,
+		}
+		if err := database.DB.Create(&user).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create user"})
+		}
+	}
+
+	// generate jwt
+	token, err := utils.GenerateJWT(user.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to generate token"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "success",
+		"token":   token,
+		"data":    mappers.ToUserResponse(user),
+	})
 }
