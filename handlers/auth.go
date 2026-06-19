@@ -110,13 +110,6 @@ func LoginAuthHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// check if email is verified
-	if !user.EmailVerified {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "email not verified. Please check your email for verification code.",
-		})
-	}
-
 	// cek password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
@@ -124,6 +117,31 @@ func LoginAuthHandler(c *fiber.Ctx) error {
 			"error": "invalid email or password",
 		})
 	}
+
+	// check if email is verified
+	if !user.EmailVerified {
+		// generate new verification code if expired or empty
+		if user.VerificationCode == "" || user.VerificationExpireAt == nil || time.Now().After(*user.VerificationExpireAt) {
+			newCode := utils.GenerateVerificationCode()
+			expireAt := time.Now().Add(24 * time.Hour)
+			user.VerificationCode = newCode
+			user.VerificationExpireAt = &expireAt
+			if err := database.DB.Save(&user).Error; err == nil {
+				_ = services.SendVerificationEmail(user.Email, newCode)
+			}
+		} else {
+			// resend current active code
+			_ = services.SendVerificationEmail(user.Email, user.VerificationCode)
+		}
+
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"error":          "email_not_verified",
+			"message":        "email not verified. Please check your email for verification code.",
+			"email_verified": false,
+			"email":          user.Email,
+		})
+	}
+
 	// generate token
 	token, err := utils.GenerateJWT(user.ID)
 	if err != nil {
