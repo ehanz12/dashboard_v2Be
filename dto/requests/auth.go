@@ -37,3 +37,16 @@ type VerifyEmailRequest struct {
 	Email            string `json:"email" validate:"required,email"`
 	VerificationCode string `json:"verification_code" validate:"required"`
 }
+
+//payload untuk forgot password
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+// payload untuk reset password
+type ResetPasswordRequest struct {
+	Email       string `json:"email" validate:"required,email"`
+	Code        string `json:"code" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=6"`
+}
+

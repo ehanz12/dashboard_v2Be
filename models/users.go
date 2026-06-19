@@ -12,6 +12,8 @@ type Users struct {
 	EmailVerified        bool
 	VerificationCode     string
 	VerificationExpireAt *time.Time
+	ResetPasswordCode     string
+	ResetPasswordExpireAt *time.Time
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
 

@@ -19,6 +19,10 @@ func SetupRouteAuth(api fiber.Router) {
 	// verify email
 	auth.Post("/verify-email", handlers.VerifyEmailHandler)
 
+	// forgot password & reset password
+	auth.Post("/forgot-password", handlers.ForgotPasswordHandler)
+	auth.Post("/reset-password", handlers.ResetPasswordHandler)
+
 	// google oauth (id token)
 	auth.Post("/google", handlers.GoogleAuthHandler)
 

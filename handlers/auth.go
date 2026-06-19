@@ -200,51 +200,85 @@ func ChangePasswordAuthHandler(c *fiber.Ctx) error {
 // then finds or creates the user and returns a JWT.
 func GoogleAuthHandler(c *fiber.Ctx) error {
 	var req requests.GoogleAuthRequest
+
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
 	}
+
 	if req.IDToken == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "id_token is required"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "id_token is required",
+		})
 	}
 
 	clientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if clientID == "" {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "GOOGLE_CLIENT_ID not configured"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "GOOGLE_CLIENT_ID not configured",
+		})
 	}
 
-	// verify id token
+	// Verify Google token
 	payload, err := idtoken.Validate(context.Background(), req.IDToken, clientID)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid google id token"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "invalid google id token",
+		})
 	}
 
-	// extract email and name from payload
+	// Ambil data dari token Google
 	emailI, _ := payload.Claims["email"]
 	nameI, _ := payload.Claims["name"]
+
 	email, _ := emailI.(string)
 	name, _ := nameI.(string)
+
 	if email == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "email not found in token"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email not found in token",
+		})
 	}
 
-	// find or create user
+	// Cari user
 	var user models.Users
+
 	err = database.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
-		// create new user
+		// User belum ada -> buat baru
 		user = models.Users{
-			Name:  name,
-			Email: email,
+			Name:          name,
+			Email:         email,
+			EmailVerified: true,
 		}
+
 		if err := database.DB.Create(&user).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create user"})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "failed to create user",
+			})
+		}
+	} else {
+		// User sudah ada -> langsung verifikasi
+		if !user.EmailVerified {
+			user.EmailVerified = true
+			user.VerificationCode = ""
+			user.VerificationExpireAt = nil
+
+			if err := database.DB.Save(&user).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "failed to update user verification status",
+				})
+			}
 		}
 	}
 
-	// generate jwt
+	// Generate JWT
 	token, err := utils.GenerateJWT(user.ID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to generate token"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to generate token",
+		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -253,6 +287,7 @@ func GoogleAuthHandler(c *fiber.Ctx) error {
 		"data":    mappers.ToUserResponse(user),
 	})
 }
+
 
 // VerifyEmailHandler verifies the user's email with the provided verification code
 func VerifyEmailHandler(c *fiber.Ctx) error {
@@ -279,3 +314,73 @@ func VerifyEmailHandler(c *fiber.Ctx) error {
 		"message": "email verified successfully",
 	})
 }
+
+// ForgotPasswordHandler handles requesting a password reset code
+func ForgotPasswordHandler(c *fiber.Ctx) error {
+	var req requests.ForgotPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
+	}
+
+	if req.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email is required",
+		})
+	}
+
+	code, err := services.ForgotPasswordService(req.Email)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := services.SendResetPasswordEmail(req.Email, code); err != nil {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "reset code generated, but failed to send email. Please try again later.",
+			"email":   req.Email,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "reset password code has been sent to your email",
+		"email":   req.Email,
+	})
+}
+
+// ResetPasswordHandler handles resetting the password with the OTP code
+func ResetPasswordHandler(c *fiber.Ctx) error {
+	var req requests.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid payload",
+		})
+	}
+
+	if req.Email == "" || req.Code == "" || req.NewPassword == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "email, code, and new_password are required",
+		})
+	}
+
+	if len(req.NewPassword) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "new_password must be at least 6 characters",
+		})
+	}
+
+	if err := services.ResetPasswordService(req.Email, req.Code, req.NewPassword); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "password has been reset successfully",
+	})
+}
+
+
+
