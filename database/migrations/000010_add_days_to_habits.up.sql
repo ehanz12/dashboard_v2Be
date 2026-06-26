@@ -1,4 +1,4 @@
 -- Up: replace date column with days JSON array
 ALTER TABLE habits
-    DROP COLUMN IF EXISTS `date`,
+    DROP COLUMN `date`,
     ADD COLUMN `days` JSON DEFAULT NULL;

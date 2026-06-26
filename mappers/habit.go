@@ -11,12 +11,19 @@ func ToResponseHabitMini(h models.Habits) responses.HabitMini {
 	if len(h.Days) > 0 {
 		_ = json.Unmarshal(h.Days, &days)
 	}
+	var reminderTime *string
+	if h.ReminderTime != nil {
+		s := h.ReminderTime.Format("15:04")
+		reminderTime = &s
+	}
 	return responses.HabitMini{
-		ID:        h.ID,
-		Name:      h.Name,
-		Frequency: h.Frequency,
-		Days:      days,
-		CreatedAt: h.CreatedAt.Format("2006-01-02 15:04:05"),
+		ID:              h.ID,
+		Name:            h.Name,
+		Frequency:       h.Frequency,
+		Days:            days,
+		ReminderTime:    reminderTime,
+		ReminderEnabled: h.ReminderEnabled,
+		CreatedAt:       h.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

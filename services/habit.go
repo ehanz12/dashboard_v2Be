@@ -14,6 +14,15 @@ import (
 	"gorm.io/datatypes"
 )
 
+// formatReminderTime converts *time.Time to *string in "HH:mm" format for API response
+func formatReminderTime(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format("15:04")
+	return &s
+}
+
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
 	tx := database.DB.Begin()
 	if tx.Error != nil {
@@ -52,6 +61,19 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		habit.Days = datatypes.JSON(b)
 	}
 
+	// handle reminder
+	if req.ReminderTime != nil && *req.ReminderTime != "" {
+		parsed, err := time.Parse("15:04", *req.ReminderTime)
+		if err != nil {
+			tx.Rollback()
+			return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+		}
+		habit.ReminderTime = &parsed
+	}
+	if req.ReminderEnabled != nil {
+		habit.ReminderEnabled = *req.ReminderEnabled
+	}
+
 	if err := tx.Create(&habit).Error; err != nil {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("Failed to Create Habit !")
@@ -62,12 +84,14 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		_ = json.Unmarshal(habit.Days, &days)
 	}
 	return responses.HabitResponse{
-		ID:        habit.ID,
-		UserID:    habit.UserID,
-		Name:      habit.Name,
-		Frequency: habit.Frequency,
-		Days:      days,
-		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
+		ID:              habit.ID,
+		UserID:          habit.UserID,
+		Name:            habit.Name,
+		Frequency:       habit.Frequency,
+		Days:            days,
+		ReminderTime:    formatReminderTime(habit.ReminderTime),
+		ReminderEnabled: habit.ReminderEnabled,
+		CreatedAt:       habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
 
@@ -116,13 +140,16 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	}
 
 	originalName := habit.Name
+	hasUpdate := false
 
 	if req.Name != "" {
 		habit.Name = req.Name
+		hasUpdate = true
 	}
 
 	if req.Frequency != "" {
 		habit.Frequency = req.Frequency
+		hasUpdate = true
 	}
 
 	if req.Days != nil {
@@ -133,9 +160,32 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		} else {
 			habit.Days = datatypes.JSON(b)
 		}
+		hasUpdate = true
 	}
 
-	if req.Name == "" && req.Frequency == "" && req.Days == nil {
+	// handle reminder time update
+	if req.ReminderTime != nil {
+		if *req.ReminderTime == "" {
+			// client wants to clear reminder time
+			habit.ReminderTime = nil
+		} else {
+			parsed, err := time.Parse("15:04", *req.ReminderTime)
+			if err != nil {
+				tx.Rollback()
+				return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+			}
+			habit.ReminderTime = &parsed
+		}
+		hasUpdate = true
+	}
+
+	// handle reminder enabled update
+	if req.ReminderEnabled != nil {
+		habit.ReminderEnabled = *req.ReminderEnabled
+		hasUpdate = true
+	}
+
+	if !hasUpdate {
 		tx.Rollback()
 		return responses.HabitResponse{}, errors.New("no data to update")
 	}
@@ -159,12 +209,14 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		_ = json.Unmarshal(habit.Days, &days)
 	}
 	return responses.HabitResponse{
-		ID:        habit.ID,
-		UserID:    habit.UserID,
-		Name:      habit.Name,
-		Frequency: habit.Frequency,
-		Days:      days,
-		CreatedAt: habit.CreatedAt.Format("2006-01-02 15:04:05"),
+		ID:              habit.ID,
+		UserID:          habit.UserID,
+		Name:            habit.Name,
+		Frequency:       habit.Frequency,
+		Days:            days,
+		ReminderTime:    formatReminderTime(habit.ReminderTime),
+		ReminderEnabled: habit.ReminderEnabled,
+		CreatedAt:       habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
 

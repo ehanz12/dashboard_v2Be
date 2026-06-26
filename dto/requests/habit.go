@@ -1,9 +1,11 @@
 package requests
 
 type CreateHabitRequest struct {
-	Name      string   `json:"name" binding:"required"`
-	Frequency string   `json:"frequency" binding:"required"`
-	Days      []string `json:"days,omitempty"`
+	Name            string   `json:"name" binding:"required"`
+	Frequency       string   `json:"frequency" binding:"required"`
+	Days            []string `json:"days,omitempty"`
+	ReminderTime    *string  `json:"reminder_time,omitempty"`
+	ReminderEnabled *bool    `json:"reminder_enabled,omitempty"`
 }
 
 type HabitQuery struct {

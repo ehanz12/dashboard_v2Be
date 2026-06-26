@@ -2,13 +2,20 @@ package main
 
 import (
 	"be_dashboard/config"
+	"be_dashboard/cron"
 	"be_dashboard/database"
 	"be_dashboard/routers"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"be_dashboard/services"
+	"time"
+
+	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func main() {
+	//load firebase service account
+	services.InitFirebase()
 	//load environment variables
 	config.LoadEnv()
 	// connect to database
@@ -21,6 +28,14 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true, //jika pake jwt
 	}))
+
+	scheduler := gocron.NewScheduler(time.Local)
+
+	scheduler.Every(1).Minute().Do(
+		cron.CheckHabitReminders,
+	)
+
+	scheduler.StartAsync()
 	//start server
 	app.Listen(":" + config.AppConfig.Port)
 }
