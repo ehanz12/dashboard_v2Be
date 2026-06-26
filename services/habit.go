@@ -14,14 +14,6 @@ import (
 	"gorm.io/datatypes"
 )
 
-// formatReminderTime converts *time.Time to *string in "HH:mm" format for API response
-func formatReminderTime(t *time.Time) *string {
-	if t == nil {
-		return nil
-	}
-	s := t.Format("15:04")
-	return &s
-}
 
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
 	tx := database.DB.Begin()
@@ -62,15 +54,16 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 	}
 
 	// handle reminder
-	if req.ReminderTime != nil && *req.ReminderTime != "" {
-		parsed, err := time.Parse("15:04", *req.ReminderTime)
-		if err != nil {
-			tx.Rollback()
-			return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
-		}
-		habit.ReminderTime = &parsed
-	}
-	if req.ReminderEnabled != nil {
+	if req.ReminderTime != nil {
+
+    if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
+        tx.Rollback()
+        return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+    }
+
+    habit.ReminderTime = req.ReminderTime
+}
+		if req.ReminderEnabled != nil {
 		habit.ReminderEnabled = *req.ReminderEnabled
 	}
 
@@ -89,7 +82,7 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 		Name:            habit.Name,
 		Frequency:       habit.Frequency,
 		Days:            days,
-		ReminderTime:    formatReminderTime(habit.ReminderTime),
+		ReminderTime:    habit.ReminderTime,
 		ReminderEnabled: habit.ReminderEnabled,
 		CreatedAt:       habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
@@ -165,20 +158,23 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 
 	// handle reminder time update
 	if req.ReminderTime != nil {
-		if *req.ReminderTime == "" {
-			// client wants to clear reminder time
-			habit.ReminderTime = nil
-		} else {
-			parsed, err := time.Parse("15:04", *req.ReminderTime)
-			if err != nil {
-				tx.Rollback()
-				return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
-			}
-			habit.ReminderTime = &parsed
-		}
-		hasUpdate = true
-	}
 
+    if *req.ReminderTime == "" {
+
+        habit.ReminderTime = nil
+
+    } else {
+
+        if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
+            tx.Rollback()
+            return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+        }
+
+        habit.ReminderTime = req.ReminderTime
+    }
+
+    hasUpdate = true
+}
 	// handle reminder enabled update
 	if req.ReminderEnabled != nil {
 		habit.ReminderEnabled = *req.ReminderEnabled
@@ -214,7 +210,7 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 		Name:            habit.Name,
 		Frequency:       habit.Frequency,
 		Days:            days,
-		ReminderTime:    formatReminderTime(habit.ReminderTime),
+		ReminderTime:    habit.ReminderTime,
 		ReminderEnabled: habit.ReminderEnabled,
 		CreatedAt:       habit.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil

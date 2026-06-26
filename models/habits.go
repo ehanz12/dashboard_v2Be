@@ -12,7 +12,7 @@ type Habits struct {
 	Name            string
 	Frequency       string
 	Days            datatypes.JSON `gorm:"type:json;default:null"`
-	ReminderTime    *time.Time
+	ReminderTime    *string
 	ReminderEnabled bool
 	CreatedAt       time.Time
 
