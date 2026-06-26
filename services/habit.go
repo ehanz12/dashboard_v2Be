@@ -76,7 +76,7 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 
 	if err := tx.Create(&habit).Error; err != nil {
 		tx.Rollback()
-		return responses.HabitResponse{}, errors.New("Failed to Create Habit !")
+		return responses.HabitResponse{}, err
 	}
 	tx.Commit()
 	var days []string
