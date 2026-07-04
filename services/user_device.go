@@ -5,55 +5,68 @@ import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/models"
 	"errors"
+	"log"
 
 	"gorm.io/gorm"
 )
 
 func SaveFCMToken(userID string, req requests.UserDeviceRequest) error {
+	log.Println("========== SAVE FCM TOKEN ==========")
+	log.Println("UserID     :", userID)
+	log.Println("FCM Token  :", req.FMCToken)
+	log.Println("DeviceType :", req.DeviceType)
+
 	if req.FMCToken == "" {
 		return errors.New("fcm token is required")
 	}
 
-	var userDevice models.UserDevice
+	var device models.UserDevice
 
+	// Cari apakah token sudah pernah tersimpan
 	err := database.DB.
-		Where("fcm_token = ?", req.FMCToken).
-		First(&userDevice).
-		Error
+		Where("fmc_token = ?", req.FMCToken). // sesuaikan dengan nama kolom database
+		First(&device).Error
 
-	if err != nil {
-		// Token belum ada -> insert baru
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	// Token belum ada → INSERT
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 
-			userDevice = models.UserDevice{
-				UserID:     userID,
-				FMCToken:   req.FMCToken,
-				DeviceType: req.DeviceType,
-			}
-
-			return database.DB.Create(&userDevice).Error
+		newDevice := models.UserDevice{
+			UserID:     userID,
+			FMCToken:   req.FMCToken,
+			DeviceType: req.DeviceType,
 		}
 
-		// Error database
+		if err := database.DB.Create(&newDevice).Error; err != nil {
+			log.Println("Insert Device Error :", err)
+			return err
+		}
+
+		log.Println("Device inserted successfully")
+		return nil
+	}
+
+	// Error selain record not found
+	if err != nil {
+		log.Println("Database Error :", err)
 		return err
 	}
 
-	// Token sudah ada -> update pemilik/device
-	userDevice.UserID = userID
-	userDevice.DeviceType = req.DeviceType
+	// Token sudah ada → UPDATE
+	device.UserID = userID
+	device.DeviceType = req.DeviceType
 
-	return database.DB.
-		Model(&userDevice).
-		Updates(map[string]interface{}{
-			"user_id":     userDevice.UserID,
-			"device_type": userDevice.DeviceType,
-		}).
-		Error
+	if err := database.DB.Save(&device).Error; err != nil {
+		log.Println("Update Device Error :", err)
+		return err
+	}
+
+	log.Println("Device updated successfully")
+	return nil
 }
 
 func DeleteFCMToken(userID, fcmToken string) error {
 	if fcmToken == "" {
-		return errors.New("fcm token is required")
+		return errors.New("fmc token is required")
 	}
 
 	result := database.DB.

@@ -15,7 +15,7 @@ func SaveUserDevice(c *fiber.Ctx) error {
 	}
 	
 	if err := services.SaveFCMToken(userID, req); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save device information"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "Device information saved successfully"})
 }
