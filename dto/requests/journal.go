@@ -5,3 +5,9 @@ type CreateJournalRequest struct {
 	Content   string `json:"content" binding:"required"`
 	EntryDate string `json:"entry_date" binding:"required"` // Format: YYYY-MM-DD
 }
+
+type JournalQuery struct {
+	Search string
+	Page   int
+	Limit  int
+} 

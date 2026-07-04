@@ -10,12 +10,31 @@ import (
 	"time"
 )
 
-func GetJournalsByUserID(userID string) ([]responses.JournalResponse, error) {
+func GetJournalsByUserID(userID string, query requests.JournalQuery) (map[string]any, error) {
 	var journals []models.Journal
-	if err := database.DB.Where("user_id = ?", userID).Order("entry_date DESC").Find(&journals).Error; err != nil {
-		return nil, err
+	offset := (query.Page - 1) * query.Limit
+	var total int64
+
+	db := database.DB.Model(&models.Journal{}).Where("user_id = ?", userID)
+
+	if query.Search != "" {
+		db = db.Where("content LIKE ?", "%"+query.Search+"%")
 	}
-	return mappers.ToListJournalResponse(journals), nil
+
+	db.Count(&total)
+	if err := db.Offset(offset).Limit(query.Limit).Find(&journals).Error; err != nil {
+		return nil, errors.New("failed to get journals")
+	}
+
+	res := mappers.ToListJournalResponse(journals)
+	totalPages := (total + int64(query.Limit) - 1) / int64(query.Limit)
+	return map[string]any{
+		"data":        res,
+		"total":       total,
+		"page":        query.Page,
+		"limit":       query.Limit,
+		"total_pages": totalPages,
+	}, nil
 }
 
 func GetJournalByDate(userID string, dateStr string) (responses.JournalResponse, error) {
