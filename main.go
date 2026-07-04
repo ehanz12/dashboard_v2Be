@@ -7,6 +7,7 @@ import (
 	"be_dashboard/routers"
 	"be_dashboard/services"
 	"time"
+	"log"
 
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
@@ -14,10 +15,10 @@ import (
 )
 
 func main() {
-	//load firebase service account
-	services.InitFirebase()
 	//load environment variables
 	config.LoadEnv()
+	//load firebase service account
+	services.InitFirebase()
 	// connect to database
 	database.Connect()
 	//setup routes
@@ -29,13 +30,16 @@ func main() {
 		AllowCredentials: true, //jika pake jwt
 	}))
 
-	scheduler := gocron.NewScheduler(time.Local)
+scheduler := gocron.NewScheduler(time.Local)
 
-	scheduler.Every(1).Minute().Do(
-		cron.CheckHabitReminders,
-	)
+scheduler.Every(1).Minute().Do(func() {
+	log.Println("Scheduler Triggered")
+	cron.CheckHabitReminders()
+})
 
-	scheduler.StartAsync()
+scheduler.StartAsync()
+
+log.Println("Reminder Scheduler Started...")	
 	//start server
 	app.Listen(":" + config.AppConfig.Port)
 }
