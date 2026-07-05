@@ -1,3 +1,4 @@
 .env
 firebase-service-account.json
 postman_collection.json
+app_binary
