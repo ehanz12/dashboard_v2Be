@@ -35,8 +35,6 @@ func SetupRoutes(app *fiber.App) {
 	SetupTransactionRoutes(api)
 	//setup route habit
 	SetupHabitRoutes(api)
-	//setup route journal
-	SetupJournalRoutes(api)
 	//setup route task
 	SetupTaskRoutes(api)
 	//setup route timeblock
