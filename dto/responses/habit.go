@@ -38,3 +38,11 @@ type HabitLogTodayResponse struct {
 	Name      string `json:"name"`
 	Completed bool   `json:"completed"`
 }
+
+type HabitSummaryResponse struct {
+	HabitID        string  `json:"habit_id"`
+	CurrentStreak  int     `json:"current_streak"`
+	LongestStreak  int     `json:"longest_streak"`
+	CompletedDays  int     `json:"completed_days"`
+	CompletionRate float64 `json:"completion_rate"`
+}

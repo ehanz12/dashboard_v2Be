@@ -8,6 +8,5 @@ type HabitLogs struct {
 	LogDate  time.Time
 	Completed bool
 	CreatedAt time.Time
-
 	Habits Habits `gorm:"foreignKey:HabitID;references:ID"`
 }

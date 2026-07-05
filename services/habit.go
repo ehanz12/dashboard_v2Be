@@ -358,3 +358,56 @@ func GetHabitLogsByDateService(userID, date string) ([]responses.HabitLogTodayRe
 
 	return result, nil
 }
+
+func GetHabitSummaryService(UserID, HabitID string) (responses.HabitSummaryResponse, error) {
+	var logs []models.HabitLogs
+	completed := 0
+	current := 0
+	longest := 0
+	currentStreak := 0
+	rate := 0
+
+	err := database.DB.Where("habit_id = ? AND user_id = ?", HabitID, UserID).Order("log_date asc").Find(&logs).Error
+	if err != nil {
+		return responses.HabitSummaryResponse{}, errors.New("Not Found Habit")
+	}
+
+	for _, log := range logs {
+		if log.Completed {
+			completed++
+		}
+	}
+
+	for _, log := range logs {
+		if log.Completed {
+			current++
+			if current > longest {
+				longest = current
+			}
+		} else {
+			current = 0
+		}
+	}
+
+	database.DB.Where("habit_id = ? AND user_id = ?", HabitID, UserID).Order("log_date desc").Limit(1).Find(&logs)
+
+	for _, log := range logs {
+		if log.Completed {
+			currentStreak++
+		}else {
+			break
+		}
+	}
+
+	if len(logs) > 0 {
+		rate = int(float64(completed) / float64(len(logs)) * 100)
+	}	
+
+	return responses.HabitSummaryResponse{
+		HabitID:        HabitID,
+		CurrentStreak:  currentStreak,
+		LongestStreak:  longest,
+		CompletedDays:  completed,
+		CompletionRate: float64(rate),
+	}, nil
+}

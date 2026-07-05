@@ -17,6 +17,7 @@ func SetupHabitRoutes(api fiber.Router) {
 
 
 	habit.Get("/logs/today", middleware.ProtectedRoute, handlers.GetHabitLogTodayByUserIDHandler)
+	habit.Get("/:id/streak", middleware.ProtectedRoute, handlers.GetHabitSummaryHandler)
 	habit.Post("/toggle", middleware.ProtectedRoute, handlers.ToggleHabitLogHandler)
 
 }
