@@ -7,7 +7,6 @@ import (
 	"be_dashboard/routers"
 	"be_dashboard/services"
 	"time"
-	"log"
 
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
@@ -33,13 +32,11 @@ func main() {
 scheduler := gocron.NewScheduler(time.Local)
 
 scheduler.Every(1).Minute().Do(func() {
-	log.Println("Scheduler Triggered")
 	cron.CheckHabitReminders()
 })
 
 scheduler.StartAsync()
-
-log.Println("Reminder Scheduler Started...")	
+// routers.PrintRoutes(app)
 	//start server
 	app.Listen(":" + config.AppConfig.Port)
 }

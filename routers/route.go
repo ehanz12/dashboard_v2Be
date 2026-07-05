@@ -1,6 +1,7 @@
 package routers
 
 import (
+	// "fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +24,6 @@ func SetupRoutes(app *fiber.App) {
 			})
 		},
 	})
-
 	// grouping api versioning & apply limiter middleware
 	api := app.Group("/api/v1", apiLimiter)
 
@@ -44,3 +44,25 @@ func SetupRoutes(app *fiber.App) {
 	//setup route device
 	SetupDeviceRoutes(api)
 }
+
+// func PrintRoutes(app *fiber.App) {
+// 	fmt.Println("================================================================")
+// 	fmt.Printf("%-8s %-35s %s\n", "METHOD", "PATH", "NAME")
+// 	fmt.Println("================================================================")
+
+// 	count := 0
+
+// 	for _, stack := range app.Stack() {
+// 		for _, route := range stack {
+// 			count++
+// 			fmt.Printf("%-8s %-35s %s\n",
+// 				route.Method,
+// 				route.Path,
+// 				route.Name,
+// 			)
+// 		}
+// 	}
+
+// 	fmt.Println("================================================================")
+// 	fmt.Printf("Total Routes: %d\n", count)
+// }

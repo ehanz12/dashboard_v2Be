@@ -45,8 +45,8 @@ func CheckHabitReminders() {
 	now := time.Now().In(location)
 	currentTime := now.Format("15:04")
 
-	log.Println("========== HABIT REMINDER ==========")
-	log.Println("Current Time :", currentTime)
+	// log.Println("========== HABIT REMINDER ==========")
+	// log.Println("Current Time :", currentTime)
 
 	var habits []models.Habits
 
@@ -58,13 +58,13 @@ func CheckHabitReminders() {
 		return
 	}
 
-	log.Printf("Found %d reminder habits\n", len(habits))
+	// log.Printf("Found %d reminder habits\n", len(habits))
 
 	for _, habit := range habits {
 
-		log.Println("--------------------------------")
-		log.Println("Habit :", habit.Name)
-		log.Println("User  :", habit.UserID)
+		// log.Println("--------------------------------")
+		// log.Println("Habit :", habit.Name)
+		// log.Println("User  :", habit.UserID)
 
 		if habit.ReminderTime == nil {
 			log.Println("Skip -> reminder time is NULL")
@@ -77,7 +77,7 @@ if len(habitTime) >= 5 {
 	habitTime = habitTime[:5]
 }
 
-		log.Println("Reminder Time :", habitTime)
+		// log.Println("Reminder Time :", habitTime)
 
 		// ==========================
 		// Cek jam reminder
@@ -108,7 +108,7 @@ if len(habitTime) >= 5 {
 			continue
 		}
 
-		log.Printf("Found %d devices\n", len(devices))
+		// log.Printf("Found %d devices\n", len(devices))
 
 		if len(devices) == 0 {
 			log.Println("Skip -> no registered devices")
@@ -117,9 +117,9 @@ if len(habitTime) >= 5 {
 
 		for _, device := range devices {
 
-			log.Println("Sending notification...")
-			log.Println("Device :", device.DeviceType)
-			log.Println("Token  :", device.FMCToken)
+			// log.Println("Sending notification...")
+			// log.Println("Device :", device.DeviceType)
+			// log.Println("Token  :", device.FMCToken)
 
 			err := services.SendPushNotification(
 				device.FMCToken,
@@ -135,5 +135,5 @@ if len(habitTime) >= 5 {
 		}
 	}
 
-	log.Println("========== END REMINDER ==========")
+	// log.Println("========== END REMINDER ==========")
 }
