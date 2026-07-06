@@ -43,6 +43,8 @@ func SetupRoutes(app *fiber.App) {
 	SetupScheduleRoutes(api)
 	//setup route device
 	SetupDeviceRoutes(api)
+	//setup route dashboard
+	SetupDashboardRoutes(api)
 }
 
 // func PrintRoutes(app *fiber.App) {

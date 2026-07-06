@@ -367,7 +367,7 @@ func GetHabitSummaryService(UserID, HabitID string) (responses.HabitSummaryRespo
 	currentStreak := 0
 	rate := 0
 
-	err := database.DB.Where("habit_id = ? AND user_id = ?", HabitID, UserID).Order("log_date asc").Find(&logs).Error
+	err := database.DB.Where("habit_id = ?", HabitID).Order("log_date asc").Find(&logs).Error
 	if err != nil {
 		return responses.HabitSummaryResponse{}, errors.New("Not Found Habit")
 	}
@@ -389,7 +389,7 @@ func GetHabitSummaryService(UserID, HabitID string) (responses.HabitSummaryRespo
 		}
 	}
 
-	database.DB.Where("habit_id = ? AND user_id = ?", HabitID, UserID).Order("log_date desc").Limit(1).Find(&logs)
+	database.DB.Where("habit_id = ?", HabitID).Order("log_date desc").Limit(1).Find(&logs)
 
 	for _, log := range logs {
 		if log.Completed {
