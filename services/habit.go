@@ -14,7 +14,6 @@ import (
 	"gorm.io/datatypes"
 )
 
-
 func CreatHabitService(userID string, req requests.CreateHabitRequest) (responses.HabitResponse, error) {
 	tx := database.DB.Begin()
 	if tx.Error != nil {
@@ -56,14 +55,14 @@ func CreatHabitService(userID string, req requests.CreateHabitRequest) (response
 	// handle reminder
 	if req.ReminderTime != nil {
 
-    if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
-        tx.Rollback()
-        return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
-    }
+		if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
+			tx.Rollback()
+			return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+		}
 
-    habit.ReminderTime = req.ReminderTime
-}
-		if req.ReminderEnabled != nil {
+		habit.ReminderTime = req.ReminderTime
+	}
+	if req.ReminderEnabled != nil {
 		habit.ReminderEnabled = *req.ReminderEnabled
 	}
 
@@ -159,22 +158,22 @@ func UpdateHabitService(userID, id string, req requests.CreateHabitRequest) (res
 	// handle reminder time update
 	if req.ReminderTime != nil {
 
-    if *req.ReminderTime == "" {
+		if *req.ReminderTime == "" {
 
-        habit.ReminderTime = nil
+			habit.ReminderTime = nil
 
-    } else {
+		} else {
 
-        if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
-            tx.Rollback()
-            return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
-        }
+			if _, err := time.Parse("15:04", *req.ReminderTime); err != nil {
+				tx.Rollback()
+				return responses.HabitResponse{}, errors.New("invalid reminder_time format, use HH:mm")
+			}
 
-        habit.ReminderTime = req.ReminderTime
-    }
+			habit.ReminderTime = req.ReminderTime
+		}
 
-    hasUpdate = true
-}
+		hasUpdate = true
+	}
 	// handle reminder enabled update
 	if req.ReminderEnabled != nil {
 		habit.ReminderEnabled = *req.ReminderEnabled
@@ -394,14 +393,14 @@ func GetHabitSummaryService(UserID, HabitID string) (responses.HabitSummaryRespo
 	for _, log := range logs {
 		if log.Completed {
 			currentStreak++
-		}else {
+		} else {
 			break
 		}
 	}
 
 	if len(logs) > 0 {
 		rate = int(float64(completed) / float64(len(logs)) * 100)
-	}	
+	}
 
 	return responses.HabitSummaryResponse{
 		HabitID:        HabitID,
