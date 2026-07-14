@@ -1,0 +1,9 @@
+.git
+.gitignore
+.vscode
+.idea
+tmp
+logs
+README.md
+data.sql
+app_binary

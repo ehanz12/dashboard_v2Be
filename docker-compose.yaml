@@ -1,0 +1,23 @@
+services:
+  be-dashboard:
+    build: .
+    image: be-dashboard:1.0
+    container_name: be-dashboard
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+
+    networks:
+      - homelab
+
+networks:
+  homelab:
+    external: true

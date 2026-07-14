@@ -7,7 +7,6 @@ import (
 	"be_dashboard/routers"
 	"be_dashboard/services"
 	"time"
-
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -20,6 +19,8 @@ func main() {
 	services.InitFirebase()
 	// connect to database
 	database.Connect()
+	//connect redis
+	database.ConnectRedis()
 	//setup routes
 	app := fiber.New()
 	routers.SetupRoutes(app)

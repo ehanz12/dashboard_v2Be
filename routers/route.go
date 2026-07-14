@@ -3,7 +3,7 @@ package routers
 import (
 	// "fmt"
 	"time"
-
+	"be_dashboard/handlers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
@@ -26,7 +26,8 @@ func SetupRoutes(app *fiber.App) {
 	})
 	// grouping api versioning & apply limiter middleware
 	api := app.Group("/api/v1", apiLimiter)
-
+	//testing redis
+	api.Get("/redis", handlers.RedisTest)
 	//setup route auth
 	SetupRouteAuth(api)
 	//setup route category
