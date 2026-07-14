@@ -6,7 +6,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 type Config struct {
 	DBHost     string
 	DBPort     string
@@ -14,16 +13,19 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	JWTSecret  string
-	Port	   string
+	Port       string
+	RedisHost  string
+	RedisPort  string
+	RedisPass  string
 }
 
 var AppConfig *Config
 
 func LoadEnv() {
 	//load env
-	if err := godotenv.Load(); err != nil  {
+	if err := godotenv.Load(); err != nil {
 		panic("Failed to load .env file")
-	} 
+	}
 
 	AppConfig = &Config{
 		DBHost:     os.Getenv("DB_HOST"),
@@ -33,5 +35,8 @@ func LoadEnv() {
 		DBName:     os.Getenv("DB_NAME"),
 		JWTSecret:  os.Getenv("JWT_SECRET"),
 		Port:       os.Getenv("PORT"),
+		RedisHost:  os.Getenv("REDIS_HOST"),
+		RedisPort:  os.Getenv("REDIS_PORT"),
+		RedisPass:  os.Getenv("REDIS_PASSWORD"),
 	}
 }

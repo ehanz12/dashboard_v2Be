@@ -3,6 +3,9 @@ package handlers
 import (
 	"be_dashboard/dto/requests"
 	"be_dashboard/services"
+	"context"
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -51,9 +54,37 @@ func GetAnalyticsSummaryHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate cache key
+	cacheKey, err := services.GenerateCacheKey(userID, "analytics:summary", filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate cache key"})
+	}
+
+	// Check cache
+	cachedData, found, err := services.GetFromCache(ctx, cacheKey)
+	if err == nil && found {
+		var data interface{}
+		if err := json.Unmarshal(cachedData, &data); err == nil {
+			return c.JSON(fiber.Map{
+				"message": "Success (from cache)",
+				"data":    data,
+			})
+		}
+	}
+
+	// Cache miss - query database
 	data, err := services.GetAnalyticsSummary(userID, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Set cache
+	if err := services.SetCache(ctx, cacheKey, data); err != nil {
+		// Log error tapi jangan stop response
+		fmt.Printf("Failed to set cache: %v\n", err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -72,9 +103,37 @@ func GetFinanceAnalyticsHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate cache key
+	cacheKey, err := services.GenerateCacheKey(userID, "analytics:finance", filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate cache key"})
+	}
+
+	// Check cache
+	cachedData, found, err := services.GetFromCache(ctx, cacheKey)
+	if err == nil && found {
+		var data interface{}
+		if err := json.Unmarshal(cachedData, &data); err == nil {
+			return c.JSON(fiber.Map{
+				"message": "Success (from cache)",
+				"data":    data,
+			})
+		}
+	}
+
+	// Cache miss - query database
 	data, err := services.GetFinanceAnalytics(userID, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Set cache
+	if err := services.SetCache(ctx, cacheKey, data); err != nil {
+		// Log error tapi jangan stop response
+		fmt.Printf("Failed to set cache: %v\n", err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -93,9 +152,37 @@ func GetCategoryAnalyticsHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate cache key
+	cacheKey, err := services.GenerateCacheKey(userID, "analytics:category", filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate cache key"})
+	}
+
+	// Check cache
+	cachedData, found, err := services.GetFromCache(ctx, cacheKey)
+	if err == nil && found {
+		var data interface{}
+		if err := json.Unmarshal(cachedData, &data); err == nil {
+			return c.JSON(fiber.Map{
+				"message": "Success (from cache)",
+				"data":    data,
+			})
+		}
+	}
+
+	// Cache miss - query database
 	data, err := services.GetCategoryAnalytics(userID, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Set cache
+	if err := services.SetCache(ctx, cacheKey, data); err != nil {
+		// Log error tapi jangan stop response
+		fmt.Printf("Failed to set cache: %v\n", err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -114,9 +201,37 @@ func GetHabitAnalyticsHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate cache key
+	cacheKey, err := services.GenerateCacheKey(userID, "analytics:habit", filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate cache key"})
+	}
+
+	// Check cache
+	cachedData, found, err := services.GetFromCache(ctx, cacheKey)
+	if err == nil && found {
+		var data interface{}
+		if err := json.Unmarshal(cachedData, &data); err == nil {
+			return c.JSON(fiber.Map{
+				"message": "Success (from cache)",
+				"data":    data,
+			})
+		}
+	}
+
+	// Cache miss - query database
 	data, err := services.GetHabitAnalytics(userID, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Set cache
+	if err := services.SetCache(ctx, cacheKey, data); err != nil {
+		// Log error tapi jangan stop response
+		fmt.Printf("Failed to set cache: %v\n", err)
 	}
 
 	return c.JSON(fiber.Map{
@@ -135,9 +250,37 @@ func GetTaskAnalyticsHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate cache key
+	cacheKey, err := services.GenerateCacheKey(userID, "analytics:task", filter)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to generate cache key"})
+	}
+
+	// Check cache
+	cachedData, found, err := services.GetFromCache(ctx, cacheKey)
+	if err == nil && found {
+		var data interface{}
+		if err := json.Unmarshal(cachedData, &data); err == nil {
+			return c.JSON(fiber.Map{
+				"message": "Success (from cache)",
+				"data":    data,
+			})
+		}
+	}
+
+	// Cache miss - query database
 	data, err := services.GetTaskAnalytics(userID, filter)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// Set cache
+	if err := services.SetCache(ctx, cacheKey, data); err != nil {
+		// Log error tapi jangan stop response
+		fmt.Printf("Failed to set cache: %v\n", err)
 	}
 
 	return c.JSON(fiber.Map{

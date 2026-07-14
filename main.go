@@ -20,6 +20,9 @@ func main() {
 	services.InitFirebase()
 	// connect to database
 	database.Connect()
+	// connect to redis
+	database.InitRedis()
+
 	//setup routes
 	app := fiber.New()
 	routers.SetupRoutes(app)
@@ -29,14 +32,14 @@ func main() {
 		AllowCredentials: true, //jika pake jwt
 	}))
 
-scheduler := gocron.NewScheduler(time.Local)
+	scheduler := gocron.NewScheduler(time.Local)
 
-scheduler.Every(1).Minute().Do(func() {
-	cron.CheckHabitReminders()
-})
+	scheduler.Every(1).Minute().Do(func() {
+		cron.CheckHabitReminders()
+	})
 
-scheduler.StartAsync()
-// routers.PrintRoutes(app)
+	scheduler.StartAsync()
+	// routers.PrintRoutes(app)
 	//start server
 	app.Listen(":" + config.AppConfig.Port)
 }
