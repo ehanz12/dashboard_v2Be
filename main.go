@@ -21,7 +21,7 @@ func main() {
 	// connect to database
 	database.Connect()
 	// connect to redis
-	database.InitRedis()
+	database.ConnectRedis()
 
 	//setup routes
 	app := fiber.New()

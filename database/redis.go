@@ -1,33 +1,33 @@
 package database
 
 import (
-	"be_dashboard/config"
-	"context"
-	"time"
+        "be_dashboard/config"
+        "context"
+        "fmt"
 
-	"github.com/redis/go-redis/v9"
+        "github.com/redis/go-redis/v9"
 )
 
-var RedisClient *redis.Client
+var (
+        Redis *redis.Client
+        Ctx   = context.Background()
+)
 
-func InitRedis() {
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     config.AppConfig.RedisHost + ":" + config.AppConfig.RedisPort,
-		Password: config.AppConfig.RedisPass,
-		DB:       0,
-	})
+func ConnectRedis() {
 
-	// Test connection
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+        cfg := config.AppConfig
 
-	if err := RedisClient.Ping(ctx).Err(); err != nil {
-		panic("Failed to connect to Redis: " + err.Error())
-	}
-}
+        Redis = redis.NewClient(&redis.Options{
+                Addr:     cfg.RedisHost + ":" + cfg.RedisPort,
+                Password: cfg.RedisPassword,
+                DB:       cfg.RedisDB,
+        })
 
-func CloseRedis() {
-	if RedisClient != nil {
-		RedisClient.Close()
-	}
+        _, err := Redis.Ping(Ctx).Result()
+
+        if err != nil {
+                panic("Failed connect Redis : " + err.Error())
+        }
+
+        fmt.Println("Redis connected successfully! 🚀")
 }

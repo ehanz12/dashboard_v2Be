@@ -12,7 +12,7 @@ const CacheTTL = 5 * time.Minute
 // GetFromCache mengambil data dari Redis cache
 // Returns: data (bytes), found (bool), error
 func GetFromCache(ctx context.Context, cacheKey string) ([]byte, bool, error) {
-	val, err := database.RedisClient.Get(ctx, cacheKey).Result()
+	val, err := database.Redis.Get(ctx, cacheKey).Result()
 	if err != nil {
 		// Cache miss - key tidak ditemukan
 		if err.Error() == "redis: nil" {
@@ -32,12 +32,12 @@ func SetCache(ctx context.Context, cacheKey string, data interface{}) error {
 		return err
 	}
 
-	return database.RedisClient.Set(ctx, cacheKey, string(jsonData), CacheTTL).Err()
+	return database.Redis.Set(ctx, cacheKey, string(jsonData), CacheTTL).Err()
 }
 
 // DeleteCache menghapus data dari Redis
 func DeleteCache(ctx context.Context, cacheKey string) error {
-	return database.RedisClient.Del(ctx, cacheKey).Err()
+	return database.Redis.Del(ctx, cacheKey).Err()
 }
 
 // GenerateCacheKey membuat cache key berdasarkan userID dan filter
